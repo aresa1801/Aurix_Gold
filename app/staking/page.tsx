@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
+import { Badge } from "@/components/ui/badge"
 import { Area, AreaChart, ResponsiveContainer, XAxis, YAxis } from "recharts"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
 import { Lock, Gift, TrendingUp, Info } from "lucide-react"
@@ -21,65 +22,95 @@ const rewardData = [
   { day: "Ming", yield: 0.17 },
 ]
 
+const cardClass =
+  "rounded-2xl border border-soft-white/5 bg-navy-800/30 backdrop-blur-md hover:border-gold/20 transition-all duration-300"
+
 export default function StakingPage() {
   const { t } = useLanguage()
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen py-8 px-4">
+      <div className="min-h-screen py-16 px-4">
         <div className="container mx-auto max-w-6xl">
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-soft-white mb-2">{t("staking.title")}</h1>
-            <p className="text-soft-white/70">{t("staking.subtitle")}</p>
+          <div className="mb-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div className="space-y-2">
+              <p className="text-sm uppercase tracking-[0.3em] text-soft-white/50">Aurix DeFi</p>
+              <h1 className="text-4xl font-bold text-soft-white md:text-5xl">{t("staking.title")}</h1>
+              <p className="max-w-2xl text-soft-white/50">{t("staking.subtitle")}</p>
+            </div>
+            <div className="flex items-center gap-3 rounded-2xl border border-prosperity/20 bg-prosperity/10 px-5 py-3">
+              <TrendingUp className="h-5 w-5 text-prosperity" />
+              <div>
+                <p className="text-xs uppercase tracking-[0.25em] text-soft-white/50">{t("staking.currentAPY")}</p>
+                <div className="flex items-end gap-2">
+                  <span className="text-3xl font-bold text-prosperity">5.2%</span>
+                  <span className="pb-1 text-sm text-soft-white/50">{t("staking.rewardPoolYield")}</span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8 mb-8">
-            {/* Staking Overview */}
-            <Card className="lg:col-span-2 bg-navy-800/50 border-gold/20 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-gold flex items-center">
-                  <Lock className="h-5 w-5 mr-2" />
-                  {t("staking.yourStakingPosition")}
-                </CardTitle>
-                <CardDescription className="text-soft-white/70">{t("staking.currentStatus")}</CardDescription>
+          <div className="grid gap-8 lg:grid-cols-3">
+            <Card className={`lg:col-span-2 ${cardClass}`}>
+              <CardHeader className="pb-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-soft-white font-bold">
+                      <Lock className="h-5 w-5 text-gold" />
+                      {t("staking.yourStakingPosition")}
+                    </CardTitle>
+                    <CardDescription className="mt-2 text-soft-white/50">{t("staking.currentStatus")}</CardDescription>
+                  </div>
+                  <Badge className="border border-gold/20 bg-gold/10 text-gold">{t("staking.currentAPY")}</Badge>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div className="text-center p-4 bg-gold/10 rounded-lg">
-                    <div className="text-2xl font-bold text-gold">125.500000</div>
-                    <div className="text-sm text-soft-white/70">{t("staking.gTokensStaked")}</div>
+              <CardContent className="space-y-8">
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="rounded-2xl border border-gold/10 bg-gold/10 p-5">
+                    <p className="text-sm text-soft-white/50">{t("staking.gTokensStaked")}</p>
+                    <div className="mt-3 text-3xl font-bold text-soft-white">125.500000</div>
+                    <p className="mt-2 text-sm text-gold">G-TOKEN</p>
                   </div>
-                  <div className="text-center p-4 bg-prosperity/10 rounded-lg">
-                    <div className="text-2xl font-bold text-prosperity">2.847</div>
-                    <div className="text-sm text-soft-white/70">{t("staking.estimatedRewards")}</div>
+                  <div className="rounded-2xl border border-prosperity/10 bg-prosperity/10 p-5">
+                    <p className="text-sm text-soft-white/50">{t("staking.estimatedRewards")}</p>
+                    <div className="mt-3 text-3xl font-bold text-prosperity">2.847</div>
+                    <p className="mt-2 text-sm text-soft-white/50">{t("staking.dailyYield")}</p>
                   </div>
-                  <div className="text-center p-4 bg-navy-900/50 rounded-lg">
-                    <div className="text-2xl font-bold text-soft-white">47 {t("staking.days")}</div>
-                    <div className="text-sm text-soft-white/70">{t("staking.durationStaked")}</div>
+                  <div className="rounded-2xl border border-soft-white/5 bg-navy-900/50 p-5">
+                    <p className="text-sm text-soft-white/50">{t("staking.durationStaked")}</p>
+                    <div className="mt-3 text-3xl font-bold text-soft-white">
+                      47 <span className="text-lg text-soft-white/50">{t("staking.days")}</span>
+                    </div>
+                    <p className="mt-2 text-sm text-soft-white/50">{t("staking.minimumStaking")}</p>
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-soft-white/70">{t("staking.stakingProgress")}</span>
-                    <span className="text-gold">47/90 {t("staking.days")}</span>
+                <div className="rounded-2xl border border-soft-white/5 bg-navy-900/40 p-5">
+                  <div className="mb-4 flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm text-soft-white/50">{t("staking.stakingProgress")}</p>
+                      <p className="mt-1 text-2xl font-bold text-soft-white">52%</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-gold">47/90 {t("staking.days")}</p>
+                      <p className="mt-1 text-xs text-soft-white/50">{t("staking.minimumStaking")}</p>
+                    </div>
                   </div>
-                  <Progress value={52} className="h-2 bg-navy-900" />
-                  <div className="text-sm text-soft-white/50">{t("staking.minimumStaking")}</div>
+                  <Progress value={52} className="h-3 bg-soft-white/5" />
                 </div>
 
-                <div className="flex space-x-3">
-                  <Button className="flex-1 bg-gold hover:bg-gold-600 text-navy-900 font-semibold">
-                    <Lock className="h-4 w-4 mr-2" />
+                <div className="grid gap-3 md:grid-cols-3">
+                  <Button className="h-12 rounded-xl bg-gold font-semibold text-navy-900 hover:bg-gold-600">
+                    <Lock className="mr-2 h-4 w-4" />
                     {t("staking.stakeMore")}
                   </Button>
-                  <Button className="flex-1 bg-prosperity hover:bg-prosperity/80 text-navy-900 font-semibold">
-                    <Gift className="h-4 w-4 mr-2" />
+                  <Button className="h-12 rounded-xl bg-prosperity font-semibold text-navy-900 hover:bg-prosperity/80">
+                    <Gift className="mr-2 h-4 w-4" />
                     {t("staking.claimRewards")}
                   </Button>
                   <Button
                     variant="outline"
-                    className="flex-1 border-gold/20 text-soft-white hover:bg-gold/10 bg-transparent"
+                    className="h-12 rounded-xl border-gold/20 bg-transparent text-soft-white hover:bg-gold/10"
                   >
                     {t("staking.unstake")}
                   </Button>
@@ -87,114 +118,129 @@ export default function StakingPage() {
               </CardContent>
             </Card>
 
-            {/* Stake New Tokens */}
-            <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-gold">{t("staking.stakeGTokens")}</CardTitle>
-                <CardDescription className="text-soft-white/70">{t("staking.lockTokens")}</CardDescription>
+            <Card className={cardClass}>
+              <CardHeader className="pb-4">
+                <CardTitle className="text-soft-white font-bold">{t("staking.stakeGTokens")}</CardTitle>
+                <CardDescription className="text-soft-white/50">{t("staking.lockTokens")}</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-5">
+                <div className="rounded-2xl border border-gold/15 bg-gold/10 p-4">
+                  <p className="text-xs uppercase tracking-[0.25em] text-soft-white/50">{t("staking.currentAPY")}</p>
+                  <div className="mt-2 flex items-end justify-between gap-3">
+                    <span className="text-4xl font-bold text-gold">5.2%</span>
+                    <span className="text-sm text-prosperity">{t("staking.estimatedDaily")}</span>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <Label className="text-soft-white">{t("staking.amountToStake")}</Label>
+                  <Label className="text-soft-white/50">{t("staking.amountToStake")}</Label>
                   <Input
                     type="number"
                     placeholder="0.000000"
-                    className="bg-navy-900/50 border-gold/20 text-soft-white"
+                    className="h-12 rounded-xl border-soft-white/10 bg-navy-900/50 text-soft-white placeholder:text-soft-white/30"
                   />
                   <div className="text-sm text-soft-white/50">{t("staking.available")}: 45.250000 G-TOKEN</div>
                 </div>
 
-                <div className="bg-navy-900/50 rounded-lg p-3 space-y-2">
+                <div className="space-y-3 rounded-2xl border border-soft-white/5 bg-navy-900/50 p-4">
                   <div className="flex justify-between text-sm">
-                    <span className="text-soft-white/70">{t("staking.currentAPY")}</span>
-                    <span className="text-prosperity font-semibold">5.2%</span>
+                    <span className="text-soft-white/50">{t("staking.currentAPY")}</span>
+                    <span className="font-semibold text-prosperity">5.2%</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-soft-white/70">{t("staking.lockPeriod")}</span>
+                    <span className="text-soft-white/50">{t("staking.lockPeriod")}</span>
                     <span className="text-soft-white">30-90 {t("staking.days")}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-soft-white/70">{t("staking.estimatedDaily")}</span>
+                    <span className="text-soft-white/50">{t("staking.estimatedDaily")}</span>
                     <span className="text-gold">0.142% {t("staking.yield")}</span>
                   </div>
                 </div>
 
-                <Button className="w-full bg-gold hover:bg-gold-600 text-navy-900 font-semibold">
+                <Button className="h-12 w-full rounded-xl bg-gold font-semibold text-navy-900 hover:bg-gold-600">
                   {t("staking.stakeNow")}
                 </Button>
               </CardContent>
             </Card>
           </div>
 
-          {/* Reward Pool Chart */}
-          <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm mb-8">
-            <CardHeader>
-              <CardTitle className="text-gold flex items-center">
-                <TrendingUp className="h-5 w-5 mr-2" />
-                {t("staking.dailyYield")}
-              </CardTitle>
-              <CardDescription className="text-soft-white/70">{t("staking.rewardPoolYield")}</CardDescription>
+          <Card className={`${cardClass} mt-8`}>
+            <CardHeader className="pb-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-soft-white font-bold">
+                    <TrendingUp className="h-5 w-5 text-gold" />
+                    {t("staking.dailyYield")}
+                  </CardTitle>
+                  <CardDescription className="mt-2 text-soft-white/50">{t("staking.rewardPoolYield")}</CardDescription>
+                </div>
+                <div className="rounded-xl border border-prosperity/20 bg-prosperity/10 px-4 py-2 text-right">
+                  <p className="text-xs text-soft-white/50">{t("staking.estimatedDaily")}</p>
+                  <p className="text-lg font-bold text-prosperity">0.142%</p>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
-              <ChartContainer
-                config={{
-                  yield: {
-                    label: "Daily Yield %",
-                    color: "hsl(var(--prosperity))",
-                  },
-                }}
-                className="h-[300px]"
-              >
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={rewardData}>
-                    <defs>
-                      <linearGradient id="yieldGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#33CC99" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#33CC99" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="day" axisLine={false} tickLine={false} />
-                    <YAxis axisLine={false} tickLine={false} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Area type="monotone" dataKey="yield" stroke="#33CC99" fillOpacity={1} fill="url(#yieldGradient)" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </ChartContainer>
+              <div className="rounded-2xl border border-soft-white/5 bg-navy-900/40 p-4">
+                <ChartContainer
+                  config={{
+                    yield: {
+                      label: "Daily Yield %",
+                      color: "hsl(var(--prosperity))",
+                    },
+                  }}
+                  className="h-[320px] w-full"
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={rewardData} margin={{ left: 8, right: 8, top: 8, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="yieldGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#33CC99" stopOpacity={0.35} />
+                          <stop offset="95%" stopColor="#33CC99" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: "#F8F5F0", opacity: 0.5 }} />
+                      <YAxis axisLine={false} tickLine={false} tick={{ fill: "#F8F5F0", opacity: 0.5 }} />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Area type="monotone" dataKey="yield" stroke="#33CC99" strokeWidth={3} fillOpacity={1} fill="url(#yieldGradient)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </ChartContainer>
+              </div>
             </CardContent>
           </Card>
 
-          {/* Reward Mechanism */}
-          <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm">
+          <Card className={`${cardClass} mt-8`}>
             <CardHeader>
-              <CardTitle className="text-gold flex items-center">
-                <Info className="h-5 w-5 mr-2" />
+              <CardTitle className="flex items-center gap-2 text-soft-white font-bold">
+                <Info className="h-5 w-5 text-gold" />
                 {t("staking.howStakingWorks")}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="bg-navy-900/50 rounded-lg p-6">
-                <div className="flex items-start space-x-3 mb-4">
-                  <div className="h-2 w-2 rounded-full bg-prosperity mt-2"></div>
-                  <div>
-                    <h4 className="text-soft-white font-semibold mb-1">{t("staking.sustainableRewards")}</h4>
-                    <p className="text-soft-white/70 text-sm">{t("staking.sustainableDesc")}</p>
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="rounded-2xl border border-prosperity/10 bg-navy-900/40 p-5">
+                  <div className="mb-4 h-10 w-10 rounded-full bg-prosperity/15 flex items-center justify-center">
+                    <div className="h-2.5 w-2.5 rounded-full bg-prosperity" />
                   </div>
+                  <h4 className="text-soft-white font-bold">{t("staking.sustainableRewards")}</h4>
+                  <p className="mt-2 text-sm text-soft-white/50">{t("staking.sustainableDesc")}</p>
                 </div>
 
-                <div className="flex items-start space-x-3 mb-4">
-                  <div className="h-2 w-2 rounded-full bg-gold mt-2"></div>
-                  <div>
-                    <h4 className="text-soft-white font-semibold mb-1">{t("staking.feeDistribution")}</h4>
-                    <p className="text-soft-white/70 text-sm">{t("staking.feeDistributionDesc")}</p>
+                <div className="rounded-2xl border border-gold/10 bg-navy-900/40 p-5">
+                  <div className="mb-4 h-10 w-10 rounded-full bg-gold/15 flex items-center justify-center">
+                    <div className="h-2.5 w-2.5 rounded-full bg-gold" />
                   </div>
+                  <h4 className="text-soft-white font-bold">{t("staking.feeDistribution")}</h4>
+                  <p className="mt-2 text-sm text-soft-white/50">{t("staking.feeDistributionDesc")}</p>
                 </div>
 
-                <div className="flex items-start space-x-3">
-                  <div className="h-2 w-2 rounded-full bg-prosperity mt-2"></div>
-                  <div>
-                    <h4 className="text-soft-white font-semibold mb-1">{t("staking.lockPeriodBenefits")}</h4>
-                    <p className="text-soft-white/70 text-sm">{t("staking.lockPeriodBenefitsDesc")}</p>
+                <div className="rounded-2xl border border-prosperity/10 bg-navy-900/40 p-5">
+                  <div className="mb-4 h-10 w-10 rounded-full bg-prosperity/15 flex items-center justify-center">
+                    <div className="h-2.5 w-2.5 rounded-full bg-prosperity" />
                   </div>
+                  <h4 className="text-soft-white font-bold">{t("staking.lockPeriodBenefits")}</h4>
+                  <p className="mt-2 text-sm text-soft-white/50">{t("staking.lockPeriodBenefitsDesc")}</p>
                 </div>
               </div>
             </CardContent>

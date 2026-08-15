@@ -26,13 +26,20 @@ import { contractService } from "@/services/contracts"
 import { toast } from "@/hooks/use-toast"
 
 const ADMIN_ADDRESS = "0xcd3FF5f1b21fEAF1610402De0eF5ac4d5EeC4aB3"
+const primaryCardClass =
+  "rounded-2xl border border-soft-white/5 bg-navy-800/30 backdrop-blur-md hover:border-gold/20 transition-all duration-300"
+const innerCardClass = "rounded-2xl border border-soft-white/5 bg-navy-900/30"
+const labelClass = "text-soft-white/50"
+const tabTriggerClass =
+  "rounded-xl px-4 py-3 text-soft-white/60 data-[state=active]:bg-gold/15 data-[state=active]:text-gold data-[state=active]:shadow-none"
+const dataRowClass = "flex items-center justify-between gap-4 border-b border-soft-white/5 py-3 last:border-b-0 last:pb-0 first:pt-0"
+const inputClass = "h-11 rounded-xl border-gold/15 bg-navy-900/50 text-soft-white placeholder:text-soft-white/30"
 
 export default function AdminPage() {
   const [isAdmin, setIsAdmin] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [connectedAddress, setConnectedAddress] = useState("")
 
-  // Contract states
   const [vaultStats, setVaultStats] = useState({
     totalReserveGrams: 0,
     reserveUsed: 0,
@@ -59,7 +66,6 @@ export default function AdminPage() {
     feePercent: 0,
   })
 
-  // Form states
   const [newReserve, setNewReserve] = useState("")
   const [newGoldPrice, setNewGoldPrice] = useState("")
   const [newSwapFee, setNewSwapFee] = useState("")
@@ -307,20 +313,27 @@ export default function AdminPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <RefreshCw className="h-8 w-8 animate-spin text-gold mx-auto mb-4" />
-          <p className="text-soft-white">Loading admin panel...</p>
+      <section className="min-h-screen px-4 py-16">
+        <div className="container mx-auto max-w-4xl">
+          <Card className={primaryCardClass}>
+            <CardContent className="flex flex-col items-center justify-center gap-4 p-10 text-center">
+              <RefreshCw className="h-10 w-10 animate-spin text-gold" />
+              <div className="space-y-1">
+                <p className="font-bold text-soft-white">Loading admin panel</p>
+                <p className="text-soft-white/50">Connecting to wallet permissions and contract data.</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </div>
+      </section>
     )
   }
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen py-8 px-4">
-        <div className="container mx-auto max-w-2xl">
-          <Alert className="border-red-500/20 bg-red-500/10">
+      <section className="min-h-screen px-4 py-16">
+        <div className="container mx-auto max-w-3xl">
+          <Alert className="rounded-2xl border-red-500/20 bg-red-500/10 p-6">
             <AlertTriangle className="h-4 w-4 text-red-400" />
             <AlertDescription className="text-red-400">
               Access Denied. Only admin address {ADMIN_ADDRESS} can access this panel.
@@ -329,163 +342,238 @@ export default function AdminPage() {
             </AlertDescription>
           </Alert>
         </div>
-      </div>
+      </section>
     )
   }
 
   return (
-    <div className="min-h-screen py-8 px-4">
-      <div className="container mx-auto max-w-6xl">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-soft-white mb-2">Admin Dashboard</h1>
-          <p className="text-soft-white/70">Manage Aurix Finance smart contracts</p>
-          <Badge className="bg-prosperity/20 text-prosperity border-prosperity/30 mt-2">
-            <CheckCircle className="h-3 w-3 mr-1" />
-            Admin Access Granted
-          </Badge>
-        </div>
+    <section className="min-h-screen px-4 py-16">
+      <div className="container mx-auto max-w-7xl space-y-8">
+        <Card className={primaryCardClass}>
+          <CardContent className="p-6">
+            <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
+              <div className="space-y-3">
+                <Badge className="w-fit border-prosperity/20 bg-prosperity/10 text-prosperity">
+                  <CheckCircle className="mr-1 h-3.5 w-3.5" />
+                  Admin Access Granted
+                </Badge>
+                <div>
+                  <h1 className="text-4xl font-bold text-soft-white">Admin Dashboard</h1>
+                  <p className="mt-2 text-soft-white/50">Manage Aurix Finance smart contracts from a cleaner control surface.</p>
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 xl:min-w-[360px]">
+                <div className={`${innerCardClass} p-4`}>
+                  <p className="text-xs uppercase tracking-[0.2em] text-soft-white/50">Connected admin</p>
+                  <p className="mt-2 font-semibold text-soft-white">{formatAddress(connectedAddress)}</p>
+                </div>
+                <div className={`${innerCardClass} p-4`}>
+                  <p className="text-xs uppercase tracking-[0.2em] text-soft-white/50">Faucet status</p>
+                  <p className={`mt-2 font-semibold ${faucetStats.isPaused ? "text-red-400" : "text-prosperity"}`}>
+                    {faucetStats.isPaused ? "Paused" : "Active"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 bg-navy-800/50 border-gold/20">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-gold/20 data-[state=active]:text-gold">
+          <TabsList className="grid h-auto w-full grid-cols-2 gap-2 rounded-2xl border border-soft-white/5 bg-navy-800/30 p-2 backdrop-blur-md xl:grid-cols-5">
+            <TabsTrigger value="overview" className={tabTriggerClass}>
               Overview
             </TabsTrigger>
-            <TabsTrigger value="vault" className="data-[state=active]:bg-gold/20 data-[state=active]:text-gold">
+            <TabsTrigger value="vault" className={tabTriggerClass}>
               Vault
             </TabsTrigger>
-            <TabsTrigger value="faucet" className="data-[state=active]:bg-gold/20 data-[state=active]:text-gold">
+            <TabsTrigger value="faucet" className={tabTriggerClass}>
               Faucet
             </TabsTrigger>
-            <TabsTrigger value="swap" className="data-[state=active]:bg-gold/20 data-[state=active]:text-gold">
+            <TabsTrigger value="swap" className={tabTriggerClass}>
               Swap
             </TabsTrigger>
-            <TabsTrigger value="tokens" className="data-[state=active]:bg-gold/20 data-[state=active]:text-gold">
+            <TabsTrigger value="tokens" className={tabTriggerClass}>
               Tokens
             </TabsTrigger>
           </TabsList>
 
-          {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-gold flex items-center text-lg">
-                    <Shield className="h-5 w-5 mr-2" />
-                    Vault Reserve
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-soft-white">
-                    {formatNumber(vaultStats.totalReserveGrams)}g
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+              <Card className={primaryCardClass}>
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className={labelClass}>Vault Reserve</p>
+                      <p className="mt-3 text-3xl font-bold text-soft-white">{formatNumber(vaultStats.totalReserveGrams)}g</p>
+                      <p className="mt-1 text-sm text-soft-white/50">Total gold reserve</p>
+                    </div>
+                    <div className="rounded-2xl border border-gold/20 bg-gold/10 p-3 text-gold">
+                      <Shield className="h-5 w-5" />
+                    </div>
                   </div>
-                  <div className="text-sm text-soft-white/70">Total Gold Reserve</div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-gold flex items-center text-lg">
-                    <Coins className="h-5 w-5 mr-2" />
-                    G-TOKEN Supply
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-soft-white">{formatNumber(goldTokenStats.totalSupply)}</div>
-                  <div className="text-sm text-soft-white/70">Total Minted</div>
+              <Card className={primaryCardClass}>
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className={labelClass}>G-TOKEN Supply</p>
+                      <p className="mt-3 text-3xl font-bold text-soft-white">{formatNumber(goldTokenStats.totalSupply)}</p>
+                      <p className="mt-1 text-sm text-soft-white/50">Total minted supply</p>
+                    </div>
+                    <div className="rounded-2xl border border-gold/20 bg-gold/10 p-3 text-gold">
+                      <Coins className="h-5 w-5" />
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-gold flex items-center text-lg">
-                    <DollarSign className="h-5 w-5 mr-2" />
-                    Faucet Balance
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-soft-white">{formatNumber(faucetStats.availableBalance)}</div>
-                  <div className="text-sm text-soft-white/70">IDRT Available</div>
+              <Card className={primaryCardClass}>
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className={labelClass}>Faucet Balance</p>
+                      <p className="mt-3 text-3xl font-bold text-soft-white">{formatNumber(faucetStats.availableBalance)}</p>
+                      <p className="mt-1 text-sm text-soft-white/50">IDRT available</p>
+                    </div>
+                    <div className="rounded-2xl border border-gold/20 bg-gold/10 p-3 text-gold">
+                      <DollarSign className="h-5 w-5" />
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-gold flex items-center text-lg">
-                    <ArrowUpDown className="h-5 w-5 mr-2" />
-                    Swap Fee
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-soft-white">{swapStats.feePercent}%</div>
-                  <div className="text-sm text-soft-white/70">Current Rate</div>
+              <Card className={primaryCardClass}>
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className={labelClass}>Swap Fee</p>
+                      <p className="mt-3 text-3xl font-bold text-soft-white">{swapStats.feePercent}%</p>
+                      <p className="mt-1 text-sm text-soft-white/50">Current exchange fee</p>
+                    </div>
+                    <div className="rounded-2xl border border-gold/20 bg-gold/10 p-3 text-gold">
+                      <ArrowUpDown className="h-5 w-5" />
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
 
-            <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-gold">Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <Button onClick={loadContractData} className="bg-prosperity hover:bg-prosperity/80 text-navy-900">
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Refresh Data
-                  </Button>
-                  <Button variant="outline" className="border-gold/20 text-soft-white hover:bg-gold/10 bg-transparent">
-                    <Settings className="h-4 w-4 mr-2" />
-                    System Settings
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Vault Management Tab */}
-          <TabsContent value="vault" className="space-y-6">
-            <div className="grid lg:grid-cols-2 gap-6">
-              <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-gold">Vault Statistics</CardTitle>
+            <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+              <Card className={primaryCardClass}>
+                <CardHeader className="p-6 pb-4">
+                  <CardTitle className="text-soft-white">System Overview</CardTitle>
+                  <CardDescription className="text-soft-white/50">Organized contract metrics for quick operational checks.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between">
-                    <span className="text-soft-white/70">Total Reserve:</span>
-                    <span className="text-gold font-semibold">{formatNumber(vaultStats.totalReserveGrams)} grams</span>
+                <CardContent className="grid gap-4 p-6 pt-0 md:grid-cols-2">
+                  <div className={`${innerCardClass} p-5`}>
+                    <p className="mb-3 font-semibold text-soft-white">Vault</p>
+                    <div className={dataRowClass}>
+                      <span className={labelClass}>Total Reserve</span>
+                      <span className="font-semibold text-gold">{formatNumber(vaultStats.totalReserveGrams)} grams</span>
+                    </div>
+                    <div className={dataRowClass}>
+                      <span className={labelClass}>Reserve Used</span>
+                      <span className="text-soft-white">{formatNumber(vaultStats.reserveUsed)} grams</span>
+                    </div>
+                    <div className={dataRowClass}>
+                      <span className={labelClass}>Available</span>
+                      <span className="font-semibold text-prosperity">{formatNumber(vaultStats.availableGrams)} grams</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-soft-white/70">Reserve Used:</span>
-                    <span className="text-soft-white">{formatNumber(vaultStats.reserveUsed)} grams</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-soft-white/70">Available:</span>
-                    <span className="text-prosperity font-semibold">
-                      {formatNumber(vaultStats.availableGrams)} grams
-                    </span>
+
+                  <div className={`${innerCardClass} p-5`}>
+                    <p className="mb-3 font-semibold text-soft-white">Faucet</p>
+                    <div className={dataRowClass}>
+                      <span className={labelClass}>Claim Amount</span>
+                      <span className="font-semibold text-prosperity">{formatNumber(faucetStats.claimAmount)} IDRT</span>
+                    </div>
+                    <div className={dataRowClass}>
+                      <span className={labelClass}>Cooldown</span>
+                      <span className="text-soft-white">{formatCooldown(faucetStats.claimCooldown)}</span>
+                    </div>
+                    <div className={dataRowClass}>
+                      <span className={labelClass}>Status</span>
+                      <Badge
+                        className={
+                          faucetStats.isPaused
+                            ? "border-red-500/30 bg-red-500/15 text-red-400"
+                            : "border-prosperity/30 bg-prosperity/15 text-prosperity"
+                        }
+                      >
+                        {faucetStats.isPaused ? "Paused" : "Active"}
+                      </Badge>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-gold">Update Reserve</CardTitle>
-                  <CardDescription className="text-soft-white/70">Set total gold reserve in grams</CardDescription>
+              <Card className={primaryCardClass}>
+                <CardHeader className="p-6 pb-4">
+                  <CardTitle className="text-soft-white">Quick Actions</CardTitle>
+                  <CardDescription className="text-soft-white/50">Common controls for refreshing and navigating admin workflows.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="grid gap-3 p-6 pt-0">
+                  <Button onClick={loadContractData} className="w-full rounded-xl bg-prosperity text-navy-900 hover:bg-prosperity/80">
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Refresh Data
+                  </Button>
+                  <Button variant="outline" className="w-full rounded-xl border-gold/20 bg-transparent text-soft-white hover:bg-gold/10">
+                    <Settings className="mr-2 h-4 w-4" />
+                    System Settings
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="vault" className="space-y-6">
+            <div className="grid gap-6 xl:grid-cols-2">
+              <Card className={primaryCardClass}>
+                <CardHeader className="p-6 pb-4">
+                  <CardTitle className="text-soft-white">Vault Statistics</CardTitle>
+                  <CardDescription className="text-soft-white/50">Reserve health and allocation in a cleaner data layout.</CardDescription>
+                </CardHeader>
+                <CardContent className="p-6 pt-0">
+                  <div className={`${innerCardClass} p-5`}>
+                    <div className={dataRowClass}>
+                      <span className={labelClass}>Total Reserve</span>
+                      <span className="font-semibold text-gold">{formatNumber(vaultStats.totalReserveGrams)} grams</span>
+                    </div>
+                    <div className={dataRowClass}>
+                      <span className={labelClass}>Reserve Used</span>
+                      <span className="text-soft-white">{formatNumber(vaultStats.reserveUsed)} grams</span>
+                    </div>
+                    <div className={dataRowClass}>
+                      <span className={labelClass}>Available</span>
+                      <span className="font-semibold text-prosperity">{formatNumber(vaultStats.availableGrams)} grams</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className={primaryCardClass}>
+                <CardHeader className="p-6 pb-4">
+                  <CardTitle className="text-soft-white">Update Reserve</CardTitle>
+                  <CardDescription className="text-soft-white/50">Set total gold reserve in grams.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4 p-6 pt-0">
                   <div className="space-y-2">
-                    <Label className="text-soft-white">New Reserve (grams)</Label>
+                    <Label className="text-soft-white/50">New Reserve (grams)</Label>
                     <Input
                       type="number"
                       placeholder="Enter reserve amount"
                       value={newReserve}
                       onChange={(e) => setNewReserve(e.target.value)}
-                      className="bg-navy-900/50 border-gold/20 text-soft-white"
+                      className={inputClass}
                     />
                   </div>
                   <Button
                     onClick={updateVaultReserve}
                     disabled={!newReserve}
-                    className="w-full bg-gold hover:bg-gold-600 text-navy-900"
+                    className="w-full rounded-xl bg-gold text-navy-900 hover:bg-gold-600"
                   >
                     Update Reserve
                   </Button>
@@ -494,68 +582,70 @@ export default function AdminPage() {
             </div>
           </TabsContent>
 
-          {/* Faucet Management Tab */}
           <TabsContent value="faucet" className="space-y-6">
-            <div className="grid lg:grid-cols-2 gap-6">
-              <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-gold">Faucet Statistics</CardTitle>
+            <div className="grid gap-6 xl:grid-cols-2">
+              <Card className={primaryCardClass}>
+                <CardHeader className="p-6 pb-4">
+                  <CardTitle className="text-soft-white">Faucet Statistics</CardTitle>
+                  <CardDescription className="text-soft-white/50">Operational faucet metrics with improved scanability.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between">
-                    <span className="text-soft-white/70">Available Balance:</span>
-                    <span className="text-gold font-semibold">{formatNumber(faucetStats.availableBalance)} IDRT</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-soft-white/70">Claim Amount:</span>
-                    <span className="text-prosperity">{formatNumber(faucetStats.claimAmount)} IDRT</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-soft-white/70">Total Distributed:</span>
-                    <span className="text-soft-white">{formatNumber(faucetStats.totalDistributed)} IDRT</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-soft-white/70">Claim Cooldown:</span>
-                    <span className="text-soft-white flex items-center">
-                      <Clock className="h-3 w-3 mr-1" />
-                      {formatCooldown(faucetStats.claimCooldown)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-soft-white/70">Status:</span>
-                    <Badge
-                      className={
-                        faucetStats.isPaused
-                          ? "bg-red-500/20 text-red-400 border-red-500/30"
-                          : "bg-prosperity/20 text-prosperity border-prosperity/30"
-                      }
-                    >
-                      {faucetStats.isPaused ? "Paused" : "Active"}
-                    </Badge>
+                <CardContent className="p-6 pt-0">
+                  <div className={`${innerCardClass} p-5`}>
+                    <div className={dataRowClass}>
+                      <span className={labelClass}>Available Balance</span>
+                      <span className="font-semibold text-gold">{formatNumber(faucetStats.availableBalance)} IDRT</span>
+                    </div>
+                    <div className={dataRowClass}>
+                      <span className={labelClass}>Claim Amount</span>
+                      <span className="font-semibold text-prosperity">{formatNumber(faucetStats.claimAmount)} IDRT</span>
+                    </div>
+                    <div className={dataRowClass}>
+                      <span className={labelClass}>Total Distributed</span>
+                      <span className="text-soft-white">{formatNumber(faucetStats.totalDistributed)} IDRT</span>
+                    </div>
+                    <div className={dataRowClass}>
+                      <span className={labelClass}>Claim Cooldown</span>
+                      <span className="flex items-center text-soft-white">
+                        <Clock className="mr-1 h-3 w-3" />
+                        {formatCooldown(faucetStats.claimCooldown)}
+                      </span>
+                    </div>
+                    <div className={dataRowClass}>
+                      <span className={labelClass}>Status</span>
+                      <Badge
+                        className={
+                          faucetStats.isPaused
+                            ? "border-red-500/30 bg-red-500/15 text-red-400"
+                            : "border-prosperity/30 bg-prosperity/15 text-prosperity"
+                        }
+                      >
+                        {faucetStats.isPaused ? "Paused" : "Active"}
+                      </Badge>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-gold">Ownership Information</CardTitle>
+              <Card className={primaryCardClass}>
+                <CardHeader className="p-6 pb-4">
+                  <CardTitle className="text-soft-white">Ownership Information</CardTitle>
+                  <CardDescription className="text-soft-white/50">Current control and pending ownership transfer state.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between">
-                    <span className="text-soft-white/70">Current Owner:</span>
-                    <span className="text-gold font-mono text-sm">{formatAddress(faucetStats.owner)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-soft-white/70">Pending Owner:</span>
-                    <span className="text-soft-white font-mono text-sm">{formatAddress(faucetStats.pendingOwner)}</span>
+                <CardContent className="space-y-4 p-6 pt-0">
+                  <div className={`${innerCardClass} p-5`}>
+                    <div className={dataRowClass}>
+                      <span className={labelClass}>Current Owner</span>
+                      <span className="font-mono text-sm text-gold">{formatAddress(faucetStats.owner)}</span>
+                    </div>
+                    <div className={dataRowClass}>
+                      <span className={labelClass}>Pending Owner</span>
+                      <span className="font-mono text-sm text-soft-white">{formatAddress(faucetStats.pendingOwner)}</span>
+                    </div>
                   </div>
                   {faucetStats.pendingOwner &&
                     faucetStats.pendingOwner !== "0x0000000000000000000000000000000000000000" && (
-                      <Button
-                        onClick={acceptOwnership}
-                        className="w-full bg-prosperity hover:bg-prosperity/80 text-navy-900"
-                      >
-                        <User className="h-4 w-4 mr-2" />
+                      <Button onClick={acceptOwnership} className="w-full rounded-xl bg-prosperity text-navy-900 hover:bg-prosperity/80">
+                        <User className="mr-2 h-4 w-4" />
                         Accept Ownership
                       </Button>
                     )}
@@ -563,75 +653,65 @@ export default function AdminPage() {
               </Card>
             </div>
 
-            <div className="grid lg:grid-cols-2 gap-6">
-              <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-gold flex items-center">
-                    <Plus className="h-5 w-5 mr-2" />
+            <div className="grid gap-6 xl:grid-cols-2">
+              <Card className={primaryCardClass}>
+                <CardHeader className="p-6 pb-4">
+                  <CardTitle className="flex items-center gap-2 text-soft-white">
+                    <Plus className="h-5 w-5 text-prosperity" />
                     Fund Faucet
                   </CardTitle>
-                  <CardDescription className="text-soft-white/70">Transfer IDRT tokens to faucet pool</CardDescription>
+                  <CardDescription className="text-soft-white/50">Transfer IDRT tokens to the faucet pool.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 p-6 pt-0">
                   <div className="space-y-2">
-                    <Label className="text-soft-white">Amount (IDRT)</Label>
+                    <Label className="text-soft-white/50">Amount (IDRT)</Label>
                     <Input
                       type="number"
                       placeholder="Enter amount to fund"
                       value={fundAmount}
                       onChange={(e) => setFundAmount(e.target.value)}
-                      className="bg-navy-900/50 border-gold/20 text-soft-white"
+                      className={inputClass}
                     />
                   </div>
-                  <Button
-                    onClick={fundFaucet}
-                    disabled={!fundAmount}
-                    className="w-full bg-prosperity hover:bg-prosperity/80 text-navy-900"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
+                  <Button onClick={fundFaucet} disabled={!fundAmount} className="w-full rounded-xl bg-prosperity text-navy-900 hover:bg-prosperity/80">
+                    <Plus className="mr-2 h-4 w-4" />
                     Fund Faucet
                   </Button>
-                  <Alert className="border-prosperity/20 bg-prosperity/10">
+                  <Alert className="rounded-2xl border-prosperity/20 bg-prosperity/10">
                     <CheckCircle className="h-4 w-4 text-prosperity" />
-                    <AlertDescription className="text-prosperity text-sm">
+                    <AlertDescription className="text-sm text-prosperity">
                       This will transfer IDRT from your wallet to the faucet contract. Approval required.
                     </AlertDescription>
                   </Alert>
                 </CardContent>
               </Card>
 
-              <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-gold flex items-center">
-                    <Minus className="h-5 w-5 mr-2" />
+              <Card className={primaryCardClass}>
+                <CardHeader className="p-6 pb-4">
+                  <CardTitle className="flex items-center gap-2 text-soft-white">
+                    <Minus className="h-5 w-5 text-gold" />
                     Withdraw from Faucet
                   </CardTitle>
-                  <CardDescription className="text-soft-white/70">
-                    Withdraw IDRT tokens from faucet contract
-                  </CardDescription>
+                  <CardDescription className="text-soft-white/50">Withdraw IDRT tokens from the faucet contract.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 p-6 pt-0">
                   <div className="space-y-2">
-                    <Label className="text-soft-white">Amount (IDRT)</Label>
+                    <Label className="text-soft-white/50">Amount (IDRT)</Label>
                     <Input
                       type="number"
                       placeholder="Enter withdrawal amount"
                       value={withdrawAmount}
                       onChange={(e) => setWithdrawAmount(e.target.value)}
-                      className="bg-navy-900/50 border-gold/20 text-soft-white"
+                      className={inputClass}
                     />
                   </div>
-                  <Button
-                    onClick={withdrawFromFaucet}
-                    disabled={!withdrawAmount}
-                    className="w-full bg-gold hover:bg-gold-600 text-navy-900"
-                  >
-                    <Minus className="h-4 w-4 mr-2" />
+                  <Button onClick={withdrawFromFaucet} disabled={!withdrawAmount} className="w-full rounded-xl bg-gold text-navy-900 hover:bg-gold-600">
+                    <Minus className="mr-2 h-4 w-4" />
                     Withdraw Tokens
                   </Button>
-                  <Alert className="border-gold/20 bg-gold/10">
+                  <Alert className="rounded-2xl border-gold/20 bg-gold/10">
                     <AlertTriangle className="h-4 w-4 text-gold" />
-                    <AlertDescription className="text-gold text-sm">
+                    <AlertDescription className="text-sm text-gold">
                       This will transfer IDRT from the faucet contract to your wallet.
                     </AlertDescription>
                   </Alert>
@@ -639,15 +719,15 @@ export default function AdminPage() {
               </Card>
             </div>
 
-            <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-gold">Faucet Controls</CardTitle>
-                <CardDescription className="text-soft-white/70">Manage faucet operations</CardDescription>
+            <Card className={primaryCardClass}>
+              <CardHeader className="p-6 pb-4">
+                <CardTitle className="text-soft-white">Faucet Controls</CardTitle>
+                <CardDescription className="text-soft-white/50">Pause or resume faucet operations.</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-6 pt-0">
                 <Button
                   onClick={toggleFaucetPause}
-                  className={`w-full ${faucetStats.isPaused ? "bg-prosperity hover:bg-prosperity/80" : "bg-red-500 hover:bg-red-600"} text-navy-900`}
+                  className={`w-full rounded-xl ${faucetStats.isPaused ? "bg-prosperity hover:bg-prosperity/80" : "bg-red-500 hover:bg-red-600"} text-navy-900`}
                 >
                   {faucetStats.isPaused ? "Resume Faucet" : "Pause Faucet"}
                 </Button>
@@ -655,100 +735,96 @@ export default function AdminPage() {
             </Card>
           </TabsContent>
 
-          {/* Swap Management Tab */}
           <TabsContent value="swap" className="space-y-6">
-            <div className="grid lg:grid-cols-2 gap-6">
-              <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-gold">Swap Configuration</CardTitle>
+            <div className="grid gap-6 xl:grid-cols-2">
+              <Card className={primaryCardClass}>
+                <CardHeader className="p-6 pb-4">
+                  <CardTitle className="text-soft-white">Swap Configuration</CardTitle>
+                  <CardDescription className="text-soft-white/50">Current fee settings for the swap contract.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between">
-                    <span className="text-soft-white/70">Current Fee:</span>
-                    <span className="text-gold font-semibold">{swapStats.feePercent}%</span>
+                <CardContent className="p-6 pt-0">
+                  <div className={`${innerCardClass} p-5`}>
+                    <div className={dataRowClass}>
+                      <span className={labelClass}>Current Fee</span>
+                      <span className="font-semibold text-gold">{swapStats.feePercent}%</span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-gold">Update Swap Fee</CardTitle>
-                  <CardDescription className="text-soft-white/70">Set swap fee percentage</CardDescription>
+              <Card className={primaryCardClass}>
+                <CardHeader className="p-6 pb-4">
+                  <CardTitle className="text-soft-white">Update Swap Fee</CardTitle>
+                  <CardDescription className="text-soft-white/50">Set swap fee percentage.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 p-6 pt-0">
                   <div className="space-y-2">
-                    <Label className="text-soft-white">Fee Percentage</Label>
+                    <Label className="text-soft-white/50">Fee Percentage</Label>
                     <Input
                       type="number"
                       placeholder="Enter fee percentage"
                       value={newSwapFee}
                       onChange={(e) => setNewSwapFee(e.target.value)}
-                      className="bg-navy-900/50 border-gold/20 text-soft-white"
+                      className={inputClass}
                     />
                   </div>
-                  <Button
-                    onClick={updateSwapFee}
-                    disabled={!newSwapFee}
-                    className="w-full bg-gold hover:bg-gold-600 text-navy-900"
-                  >
+                  <Button onClick={updateSwapFee} disabled={!newSwapFee} className="w-full rounded-xl bg-gold text-navy-900 hover:bg-gold-600">
                     Update Fee
                   </Button>
                 </CardContent>
               </Card>
             </div>
 
-            <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-gold">Update Gold Price</CardTitle>
-                <CardDescription className="text-soft-white/70">
-                  Set gold price in IDRT for redemption calculations
-                </CardDescription>
+            <Card className={primaryCardClass}>
+              <CardHeader className="p-6 pb-4">
+                <CardTitle className="text-soft-white">Update Gold Price</CardTitle>
+                <CardDescription className="text-soft-white/50">Set gold price in IDRT for redemption calculations.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 p-6 pt-0">
                 <div className="space-y-2">
-                  <Label className="text-soft-white">Gold Price (IDRT per gram)</Label>
+                  <Label className="text-soft-white/50">Gold Price (IDRT per gram)</Label>
                   <Input
                     type="number"
                     placeholder="Enter gold price"
                     value={newGoldPrice}
                     onChange={(e) => setNewGoldPrice(e.target.value)}
-                    className="bg-navy-900/50 border-gold/20 text-soft-white"
+                    className={inputClass}
                   />
                 </div>
-                <Button
-                  onClick={updateGoldPrice}
-                  disabled={!newGoldPrice}
-                  className="w-full bg-gold hover:bg-gold-600 text-navy-900"
-                >
+                <Button onClick={updateGoldPrice} disabled={!newGoldPrice} className="w-full rounded-xl bg-gold text-navy-900 hover:bg-gold-600">
                   Update Gold Price
                 </Button>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Token Management Tab */}
           <TabsContent value="tokens" className="space-y-6">
-            <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-gold">Gold Token Information</CardTitle>
+            <Card className={primaryCardClass}>
+              <CardHeader className="p-6 pb-4">
+                <CardTitle className="text-soft-white">Gold Token Information</CardTitle>
+                <CardDescription className="text-soft-white/50">Cleaner token reference data for admin checks.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="flex justify-between">
-                    <span className="text-soft-white/70">Name:</span>
-                    <span className="text-soft-white font-semibold">{goldTokenStats.name}</span>
+              <CardContent className="p-6 pt-0">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className={`${innerCardClass} p-5`}>
+                    <div className={dataRowClass}>
+                      <span className={labelClass}>Name</span>
+                      <span className="font-semibold text-soft-white">{goldTokenStats.name}</span>
+                    </div>
+                    <div className={dataRowClass}>
+                      <span className={labelClass}>Symbol</span>
+                      <span className="font-semibold text-soft-white">{goldTokenStats.symbol}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-soft-white/70">Symbol:</span>
-                    <span className="text-soft-white font-semibold">{goldTokenStats.symbol}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-soft-white/70">Total Supply:</span>
-                    <span className="text-gold font-semibold">{formatNumber(goldTokenStats.totalSupply)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-soft-white/70">Decimals:</span>
-                    <span className="text-soft-white font-semibold">18</span>
+                  <div className={`${innerCardClass} p-5`}>
+                    <div className={dataRowClass}>
+                      <span className={labelClass}>Total Supply</span>
+                      <span className="font-semibold text-gold">{formatNumber(goldTokenStats.totalSupply)}</span>
+                    </div>
+                    <div className={dataRowClass}>
+                      <span className={labelClass}>Decimals</span>
+                      <span className="font-semibold text-soft-white">18</span>
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -756,6 +832,6 @@ export default function AdminPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </section>
   )
 }

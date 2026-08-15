@@ -1,15 +1,38 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Coins, Shield, Gift, RefreshCw, TrendingUp } from "lucide-react"
+import { Coins, Shield, Gift, RefreshCw, TrendingUp, ArrowRight, Zap, Lock } from "lucide-react"
 import Link from "next/link"
 import { useLanguage } from "@/contexts/language-context"
 import { GoldPriceWidget } from "@/components/gold-price-widget"
 import { GoldPriceComparison } from "@/components/gold-price-comparison"
 import { useGoldPrice } from "@/hooks/use-gold-price"
+
+function AnimatedCounter({ target, prefix = "", suffix = "" }: { target: number; prefix?: string; suffix?: string }) {
+  const [count, setCount] = useState(0)
+
+  useEffect(() => {
+    const duration = 2000
+    const steps = 60
+    const increment = target / steps
+    let current = 0
+    const timer = setInterval(() => {
+      current += increment
+      if (current >= target) {
+        setCount(target)
+        clearInterval(timer)
+      } else {
+        setCount(Math.round(current))
+      }
+    }, duration / steps)
+    return () => clearInterval(timer)
+  }, [target])
+
+  return <span>{prefix}{new Intl.NumberFormat("id-ID").format(count)}{suffix}</span>
+}
 
 export default function HomePage() {
   const { t } = useLanguage()
@@ -21,53 +44,60 @@ export default function HomePage() {
   })
 
   const goldPriceIDR = useMemo(() => goldPriceData?.buyPrice || 2010950, [goldPriceData?.buyPrice])
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("id-ID").format(amount)
-  }
-
   const totalValueIDR = useMemo(() => totalGoldKg * 1000 * goldPriceIDR, [totalGoldKg, goldPriceIDR])
 
   return (
     <div className="min-h-screen bg-transparent">
-      <section className="relative py-12 md:py-16 lg:py-20 px-4 text-center">
-        <div className="container mx-auto max-w-4xl">
-          <div className="mb-6 md:mb-8 flex justify-center">
+      {/* Hero Section */}
+      <section className="relative py-16 md:py-24 lg:py-32 px-4 text-center overflow-hidden">
+        {/* Background glow effects */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-gold/5 rounded-full blur-3xl"></div>
+        </div>
+
+        <div className="container mx-auto max-w-5xl relative z-10">
+          <div className="mb-8 flex justify-center">
             <div className="relative">
-              <div className="h-14 md:h-16 w-14 md:w-16 rounded-full bg-gradient-to-r from-gold to-gold-600 flex items-center justify-center animate-coin-flip">
-                <Coins className="h-7 md:h-8 w-7 md:w-8 text-navy-900" />
+              <div className="h-16 w-16 md:h-20 md:w-20 rounded-full bg-gradient-to-br from-gold via-gold-600 to-amber-700 flex items-center justify-center shadow-lg shadow-gold/20">
+                <Coins className="h-8 w-8 md:h-10 md:w-10 text-navy-900" />
               </div>
-              <div className="absolute inset-0 rounded-full bg-gold/20 animate-pulse"></div>
+              <div className="absolute -inset-2 rounded-full bg-gold/10 animate-ping opacity-75"></div>
             </div>
           </div>
 
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-soft-white mb-4 md:mb-6 break-words">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold to-gold-600">
+          <Badge className="mb-6 bg-gold/10 text-gold border-gold/30 px-4 py-1.5 text-sm">
+            🔒 Backed by Physical Gold Reserves
+          </Badge>
+
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-soft-white mb-6 leading-tight tracking-tight">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold via-amber-400 to-gold-600">
               {t("home.title")}
             </span>
           </h1>
 
-          <p className="text-sm md:text-base lg:text-lg text-soft-white/70 mb-6 md:mb-8 max-w-2xl mx-auto">
+          <p className="text-base md:text-lg lg:text-xl text-soft-white/60 mb-10 max-w-2xl mx-auto leading-relaxed">
             {t("home.subtitle")}
           </p>
 
-          <div className="mb-6 md:mb-8 max-w-md mx-auto">
+          {/* Price Widget - Prominent */}
+          <div className="mb-10 max-w-lg mx-auto">
             <GoldPriceWidget compact={false} />
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/swap">
               <Button
                 size="lg"
-                className="bg-gold hover:bg-gold-600 text-navy-900 font-semibold px-6 md:px-8 w-full sm:w-auto text-sm md:text-base transition-all duration-200"
+                className="bg-gradient-to-r from-gold to-amber-600 hover:from-gold-600 hover:to-amber-700 text-navy-900 font-bold px-8 py-6 text-base rounded-xl shadow-lg shadow-gold/20 hover:shadow-gold/40 transition-all duration-300 w-full sm:w-auto"
               >
                 {t("home.buyGoldToken")}
+                <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
             <Button
               size="lg"
               variant="outline"
-              className="border-gold text-gold hover:bg-gold/10 px-6 md:px-8 w-full sm:w-auto text-sm md:text-base bg-transparent transition-all duration-200"
+              className="border-soft-white/20 text-soft-white hover:bg-soft-white/5 hover:border-gold/50 px-8 py-6 text-base rounded-xl bg-transparent transition-all duration-300 w-full sm:w-auto"
             >
               {t("home.connectWallet")}
             </Button>
@@ -75,58 +105,47 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="py-8 md:py-12 lg:py-16 px-4 bg-navy-900/30 backdrop-blur-sm">
+      {/* Features Section */}
+      <section className="py-16 md:py-20 px-4">
         <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-8 md:mb-12">
-            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-soft-white mb-3">
-              {t("home.comparisonTitle")}
-            </h2>
-            <p className="text-sm md:text-base text-soft-white/70">{t("home.comparisonSubtitle")}</p>
-          </div>
-          <GoldPriceComparison />
-        </div>
-      </section>
-
-      <section className="py-8 md:py-12 lg:py-16 px-4">
-        <div className="container mx-auto max-w-6xl">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-            <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm hover:border-gold/40 hover:bg-navy-800/70 transition-all duration-300 cursor-pointer">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="bg-navy-800/30 border-soft-white/5 backdrop-blur-md hover:border-gold/30 hover:bg-navy-800/50 transition-all duration-500 group rounded-2xl">
               <CardHeader className="text-center pb-4">
-                <div className="mx-auto mb-3 h-12 w-12 rounded-full bg-gold/20 flex items-center justify-center">
-                  <Shield className="h-6 w-6 text-gold" />
+                <div className="mx-auto mb-4 h-14 w-14 rounded-2xl bg-gradient-to-br from-gold/20 to-gold/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <Shield className="h-7 w-7 text-gold" />
                 </div>
-                <CardTitle className="text-gold text-base md:text-lg">{t("home.physicalGoldBacked")}</CardTitle>
+                <CardTitle className="text-soft-white text-lg">{t("home.physicalGoldBacked")}</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-soft-white/70 text-sm text-center">
+                <CardDescription className="text-soft-white/50 text-sm text-center leading-relaxed">
                   {t("home.physicalGoldBackedDesc")}
                 </CardDescription>
               </CardContent>
             </Card>
 
-            <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm hover:border-prosperity/40 hover:bg-navy-800/70 transition-all duration-300 cursor-pointer">
+            <Card className="bg-navy-800/30 border-soft-white/5 backdrop-blur-md hover:border-prosperity/30 hover:bg-navy-800/50 transition-all duration-500 group rounded-2xl">
               <CardHeader className="text-center pb-4">
-                <div className="mx-auto mb-3 h-12 w-12 rounded-full bg-prosperity/20 flex items-center justify-center">
-                  <Gift className="h-6 w-6 text-prosperity" />
+                <div className="mx-auto mb-4 h-14 w-14 rounded-2xl bg-gradient-to-br from-prosperity/20 to-prosperity/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <Gift className="h-7 w-7 text-prosperity" />
                 </div>
-                <CardTitle className="text-gold text-base md:text-lg">{t("home.stakingRewards")}</CardTitle>
+                <CardTitle className="text-soft-white text-lg">{t("home.stakingRewards")}</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-soft-white/70 text-sm text-center">
+                <CardDescription className="text-soft-white/50 text-sm text-center leading-relaxed">
                   {t("home.stakingRewardsDesc")}
                 </CardDescription>
               </CardContent>
             </Card>
 
-            <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm hover:border-gold/40 hover:bg-navy-800/70 transition-all duration-300 cursor-pointer">
+            <Card className="bg-navy-800/30 border-soft-white/5 backdrop-blur-md hover:border-gold/30 hover:bg-navy-800/50 transition-all duration-500 group rounded-2xl">
               <CardHeader className="text-center pb-4">
-                <div className="mx-auto mb-3 h-12 w-12 rounded-full bg-gold/20 flex items-center justify-center">
-                  <RefreshCw className="h-6 w-6 text-gold" />
+                <div className="mx-auto mb-4 h-14 w-14 rounded-2xl bg-gradient-to-br from-gold/20 to-gold/5 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                  <RefreshCw className="h-7 w-7 text-gold" />
                 </div>
-                <CardTitle className="text-gold text-base md:text-lg">{t("home.redeemAnytime")}</CardTitle>
+                <CardTitle className="text-soft-white text-lg">{t("home.redeemAnytime")}</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-soft-white/70 text-sm text-center">
+                <CardDescription className="text-soft-white/50 text-sm text-center leading-relaxed">
                   {t("home.redeemAnytimeDesc")}
                 </CardDescription>
               </CardContent>
@@ -135,70 +154,69 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="py-8 md:py-12 lg:py-16 px-4 bg-navy-900/50">
+      {/* Price Comparison Section */}
+      <section className="py-16 md:py-20 px-4 bg-navy-900/40">
         <div className="container mx-auto max-w-6xl">
-          <div className="text-center mb-8 md:mb-12">
-            <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-soft-white mb-3">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-soft-white mb-4">
+              {t("home.comparisonTitle")}
+            </h2>
+            <p className="text-soft-white/50 max-w-xl mx-auto">{t("home.comparisonSubtitle")}</p>
+          </div>
+          <GoldPriceComparison />
+        </div>
+      </section>
+
+      {/* Live Vault Stats */}
+      <section className="py-16 md:py-20 px-4">
+        <div className="container mx-auto max-w-6xl">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-soft-white mb-4">
               {t("home.liveVaultStats")}
             </h2>
-            <p className="text-sm md:text-base text-soft-white/70">{t("home.liveVaultStatsDesc")}</p>
+            <p className="text-soft-white/50">{t("home.liveVaultStatsDesc")}</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm hover:border-gold/40 hover:bg-navy-800/70 transition-all duration-300">
-              <CardHeader className="pb-3">
-                <CardDescription className="text-soft-white/70 text-xs md:text-sm">
-                  {t("home.totalGoldInVault")}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-lg md:text-xl font-bold text-gold">{totalGoldKg.toLocaleString()} kg</div>
-                <div className="text-xs text-prosperity flex items-center mt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="bg-navy-800/30 border-soft-white/5 backdrop-blur-md rounded-2xl hover:border-gold/20 transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="text-soft-white/50 text-sm mb-2">{t("home.totalGoldInVault")}</div>
+                <div className="text-2xl font-bold text-gold mb-1">
+                  <AnimatedCounter target={totalGoldKg} suffix=" kg" />
+                </div>
+                <div className="text-xs text-prosperity flex items-center">
                   <TrendingUp className="h-3 w-3 mr-1" />
                   +2.3% this month
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm hover:border-gold/40 hover:bg-navy-800/70 transition-all duration-300">
-              <CardHeader className="pb-3">
-                <CardDescription className="text-soft-white/70 text-xs md:text-sm">
-                  {t("home.totalGTokens")}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-lg md:text-xl font-bold text-gold">{formatCurrency(totalGoldKg * 1000)}</div>
-                <div className="text-xs text-soft-white/50">1 G-TOKEN = 1g Gold</div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm hover:border-prosperity/40 hover:bg-navy-800/70 transition-all duration-300">
-              <CardHeader className="pb-3">
-                <CardDescription className="text-soft-white/70 text-xs md:text-sm">
-                  {t("home.totalValue")}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-lg md:text-xl font-bold text-prosperity">
-                  Rp {formatCurrency(Math.round(totalValueIDR / 1000000000))}B
+            <Card className="bg-navy-800/30 border-soft-white/5 backdrop-blur-md rounded-2xl hover:border-gold/20 transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="text-soft-white/50 text-sm mb-2">{t("home.totalGTokens")}</div>
+                <div className="text-2xl font-bold text-gold mb-1">
+                  <AnimatedCounter target={totalGoldKg * 1000} />
                 </div>
-                <div className="text-xs text-soft-white/50">{t("home.currentMarketValue")}</div>
+                <div className="text-xs text-soft-white/40">1 G-TOKEN = 1g Gold</div>
               </CardContent>
             </Card>
 
-            <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm hover:border-gold/40 hover:bg-navy-800/70 transition-all duration-300">
-              <CardHeader className="pb-3">
-                <CardDescription className="text-soft-white/70 text-xs md:text-sm">
-                  {t("home.latestAudit")}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-lg md:text-xl font-bold text-gold">Dec 15, 2024</div>
-                <Badge
-                  variant="secondary"
-                  className="bg-prosperity/20 text-prosperity border-prosperity/30 mt-2 text-xs"
-                >
-                  {t("home.verified")}
+            <Card className="bg-navy-800/30 border-soft-white/5 backdrop-blur-md rounded-2xl hover:border-prosperity/20 transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="text-soft-white/50 text-sm mb-2">{t("home.totalValue")}</div>
+                <div className="text-2xl font-bold text-prosperity mb-1">
+                  Rp <AnimatedCounter target={Math.round(totalValueIDR / 1000000000)} suffix="B" />
+                </div>
+                <div className="text-xs text-soft-white/40">{t("home.currentMarketValue")}</div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-navy-800/30 border-soft-white/5 backdrop-blur-md rounded-2xl hover:border-gold/20 transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="text-soft-white/50 text-sm mb-2">{t("home.latestAudit")}</div>
+                <div className="text-2xl font-bold text-gold mb-1">Dec 15, 2024</div>
+                <Badge className="bg-prosperity/10 text-prosperity border-prosperity/20 text-xs">
+                  ✓ {t("home.verified")}
                 </Badge>
               </CardContent>
             </Card>
@@ -206,58 +224,60 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="py-8 md:py-12 lg:py-16 px-4">
-        <div className="container mx-auto max-w-4xl">
-          <Card className="bg-navy-800/50 border-prosperity/20 backdrop-blur-sm hover:bg-navy-800/70 transition-all duration-300">
-            <CardHeader>
-              <CardTitle className="text-prosperity text-center text-base md:text-lg lg:text-xl">
+      {/* Why G-TOKEN Section */}
+      <section className="py-16 md:py-20 px-4 bg-navy-900/40">
+        <div className="container mx-auto max-w-5xl">
+          <Card className="bg-navy-800/30 border-soft-white/5 backdrop-blur-md rounded-2xl overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-center text-xl md:text-2xl text-soft-white">
                 {t("home.gTokenFeatures")}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <h4 className="text-gold font-semibold text-sm md:text-base">{t("home.physicalGoldPrice")}</h4>
-                  <div className="text-xs md:text-sm text-soft-white/70 space-y-2">
-                    <div>• ANTAM: Rp 1.087.000/gram</div>
-                    <div>• UBS: Rp 1.085.000/gram</div>
-                    <div>• Pegadaian: Rp 1.083.000/gram</div>
-                  </div>
+            <CardContent className="space-y-8 p-6 md:p-8">
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="bg-gradient-to-br from-gold/10 to-transparent rounded-xl p-5 border border-gold/10 text-center">
+                  <Zap className="h-6 w-6 text-gold mx-auto mb-3" />
+                  <div className="text-gold font-bold text-lg">24/7</div>
+                  <div className="text-xs text-soft-white/50 mt-1">{t("home.tradingHours")}</div>
                 </div>
-                <div className="space-y-3">
-                  <h4 className="text-gold font-semibold text-sm md:text-base">{t("home.gTokenFeatures")}</h4>
-                  <div className="text-xs md:text-sm text-soft-white/70 space-y-2">
-                    <div>
-                      • {t("home.percentageFromGold")} (beli) / {t("home.percentageFromGold70")} (jual)
-                    </div>
-                    <div>• Trading 24/7 tanpa batas waktu</div>
-                    <div>• Tidak perlu penyimpanan fisik</div>
-                    <div>• Instant liquidity & settlement</div>
-                  </div>
+                <div className="bg-gradient-to-br from-prosperity/10 to-transparent rounded-xl p-5 border border-prosperity/10 text-center">
+                  <Lock className="h-6 w-6 text-prosperity mx-auto mb-3" />
+                  <div className="text-prosperity font-bold text-lg">100%</div>
+                  <div className="text-xs text-soft-white/50 mt-1">Physical Gold Backed</div>
+                </div>
+                <div className="bg-gradient-to-br from-gold/10 to-transparent rounded-xl p-5 border border-gold/10 text-center">
+                  <TrendingUp className="h-6 w-6 text-gold mx-auto mb-3" />
+                  <div className="text-gold font-bold text-lg">Instant</div>
+                  <div className="text-xs text-soft-white/50 mt-1">Liquidity & Settlement</div>
                 </div>
               </div>
 
-              <div className="bg-navy-900/50 rounded-lg p-4 border border-gold/20">
-                <div className="text-xs md:text-sm text-soft-white/70 text-center">
-                  <strong className="text-gold">{t("home.gTokenFeatures")}:</strong> {t("home.premiumPricingRationale")}
+              <div className="bg-navy-900/50 rounded-xl p-5 border border-soft-white/5">
+                <div className="text-sm text-soft-white/60 text-center leading-relaxed">
+                  <strong className="text-gold">{t("home.gTokenFeatures")}:</strong>{" "}
+                  {t("home.premiumPricingRationale")}
                 </div>
               </div>
 
               <div className="grid md:grid-cols-3 gap-4">
-                <div className="bg-gold/10 rounded-lg p-4 border border-gold/20 text-center">
-                  <div className="text-gold font-semibold text-sm md:text-base">Rp 2.010.950</div>
-                  <div className="text-xs text-soft-white/70 mt-1">{t("home.buyPrice")}</div>
-                  <div className="text-xs text-prosperity">+85% from gold</div>
+                <div className="rounded-xl p-5 border border-gold/15 bg-gold/5 text-center">
+                  <div className="text-gold font-bold text-lg">
+                    {goldPriceData ? new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(goldPriceData.buyPrice) : "Rp 2.010.950"}
+                  </div>
+                  <div className="text-xs text-soft-white/50 mt-1">{t("home.buyPrice")}</div>
+                  <div className="text-xs text-prosperity mt-1">+85% from gold</div>
                 </div>
-                <div className="bg-prosperity/10 rounded-lg p-4 border border-prosperity/20 text-center">
-                  <div className="text-prosperity font-semibold text-sm md:text-base">Rp 1.841.100</div>
-                  <div className="text-xs text-soft-white/70 mt-1">{t("home.sellPrice")}</div>
-                  <div className="text-xs text-gold">+70% from gold</div>
+                <div className="rounded-xl p-5 border border-prosperity/15 bg-prosperity/5 text-center">
+                  <div className="text-prosperity font-bold text-lg">
+                    {goldPriceData ? new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(goldPriceData.sellPrice) : "Rp 1.841.100"}
+                  </div>
+                  <div className="text-xs text-soft-white/50 mt-1">{t("home.sellPrice")}</div>
+                  <div className="text-xs text-gold mt-1">+70% from gold</div>
                 </div>
-                <div className="bg-navy-900/50 rounded-lg p-4 border border-soft-white/20 text-center">
-                  <div className="text-soft-white font-semibold text-sm md:text-base">24/7</div>
-                  <div className="text-xs text-soft-white/70 mt-1">{t("home.tradingHours")}</div>
-                  <div className="text-xs text-gold">{t("home.alwaysAvailable")}</div>
+                <div className="rounded-xl p-5 border border-soft-white/10 bg-soft-white/5 text-center">
+                  <div className="text-soft-white font-bold text-lg">0%</div>
+                  <div className="text-xs text-soft-white/50 mt-1">Storage Fees</div>
+                  <div className="text-xs text-gold mt-1">{t("home.alwaysAvailable")}</div>
                 </div>
               </div>
             </CardContent>
