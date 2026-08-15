@@ -187,7 +187,7 @@ export function usePortfolioData(connectedAddress: string | null) {
     } catch (error) {
       console.error("Failed to setup event listeners:", error)
     }
-  }, []) // Stable reference - handleBalanceUpdate will be captured from closure
+  }, [handleBalanceUpdate]) // Include to ensure event listeners use latest callback
 
   const loadTransactionHistory = useCallback(async (address: string) => {
     try {

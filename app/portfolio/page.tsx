@@ -91,6 +91,14 @@ export default function PortfolioPage() {
           await syncWalletBalances(address)
           await loadTransactionHistory(address)
         }
+      } else {
+        const errorMessage = "MetaMask is not installed. Please install MetaMask to connect your wallet."
+        setConnectionError(errorMessage)
+        toast({
+          title: "MetaMask Not Found",
+          description: errorMessage,
+          variant: "destructive",
+        })
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to connect wallet"
