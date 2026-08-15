@@ -229,7 +229,7 @@ export function usePortfolioData(connectedAddress: string | null) {
     } catch (error) {
       console.error("Failed to load transaction history:", error)
     }
-  }, []) // No dependencies needed since mock data is static)
+  }, []) // No dependencies needed since mock data is static
 
   const resetPortfolioData = useCallback(() => {
     setBalances({
@@ -256,6 +256,15 @@ export function usePortfolioData(connectedAddress: string | null) {
       bnbPercentage: 0,
     })
   }, [])
+
+  // Cleanup event listeners when address changes or component unmounts
+  useEffect(() => {
+    return () => {
+      if (connectedAddress) {
+        contractService.removeEventListeners(connectedAddress)
+      }
+    }
+  }, [connectedAddress])
 
   return {
     balances,

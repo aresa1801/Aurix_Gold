@@ -34,7 +34,8 @@ The monolithic 1046-line component has been broken down into focused, reusable s
 - `formatNumber()` - Format numbers to K, M, B notation
 - `formatCurrency()` - Format as IDR currency
 - `formatPercentage()` - Format percentages with sign
-- `formatDateTime()` - Format timestamps
+- `formatDateTime()` - Format timestamps to locale string
+- `formatTime()` - Format timestamps to time string (HH:MM:SS)
 - `shortenAddress()` - Shorten wallet addresses
 - `getChangeColor()` - Get color based on change value
 - `calculatePercentage()` - Safe percentage calculation
