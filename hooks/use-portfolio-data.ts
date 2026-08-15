@@ -187,12 +187,13 @@ export function usePortfolioData(connectedAddress: string | null) {
     } catch (error) {
       console.error("Failed to setup event listeners:", error)
     }
-  }, [handleBalanceUpdate])
+  }, []) // Stable reference - handleBalanceUpdate will be captured from closure
 
   const loadTransactionHistory = useCallback(async (address: string) => {
     try {
       // TODO: Replace with real transaction history fetched from blockchain
       // This is mock data for demonstration - should be replaced with actual transaction queries
+      // When integrating real data, add address to dependency array to refetch on address change
       const mockTransactions: TransactionHistory[] = [
         {
           id: "1",

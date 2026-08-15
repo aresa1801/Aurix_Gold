@@ -29,6 +29,7 @@ export default function PortfolioPage() {
   const router = useRouter()
   const [connectedAddress, setConnectedAddress] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [connectionError, setConnectionError] = useState<string | null>(null)
 
   const {
     balances,
@@ -74,6 +75,7 @@ export default function PortfolioPage() {
   const connectWallet = async () => {
     try {
       setIsLoading(true)
+      setConnectionError(null)
 
       if (typeof window !== "undefined" && (window as any).ethereum) {
         const accounts = await (window as any).ethereum.request({
@@ -91,10 +93,12 @@ export default function PortfolioPage() {
         }
       }
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to connect wallet"
+      setConnectionError(errorMessage)
       console.error("Failed to connect wallet:", error)
       toast({
         title: "Connection Failed",
-        description: "Failed to connect wallet. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
@@ -175,7 +179,7 @@ export default function PortfolioPage() {
   }
 
   if (!connectedAddress) {
-    return <NotConnectedState error={error} onConnect={connectWallet} isLoading={isLoading} />
+    return <NotConnectedState error={connectionError} onConnect={connectWallet} isLoading={isLoading} />
   }
 
   return (

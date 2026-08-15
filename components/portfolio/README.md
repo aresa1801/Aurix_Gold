@@ -37,7 +37,8 @@ The monolithic 1046-line component has been broken down into focused, reusable s
 - `formatDateTime()` - Format timestamps to locale string
 - `formatTime()` - Format timestamps to time string (HH:MM:SS)
 - `shortenAddress()` - Shorten wallet addresses
-- `getChangeColor()` - Get color based on change value
+- `getChangeColor()` - Get text color class based on change value (positive/negative)
+- `getChangeBgColor()` - Get background color class based on change value
 - `calculatePercentage()` - Safe percentage calculation
 - `parseBalance()` - Safe balance parsing
 
