@@ -92,13 +92,13 @@ export function usePortfolioData(connectedAddress: string | null) {
       const goldTokenPercentage = totalValueIDR > 0 ? (goldValue / totalValueIDR) * 100 : 0
       const bnbPercentage = totalValueIDR > 0 ? (bnbValue / totalValueIDR) * 100 : 0
 
-      // Generate more realistic 24h change: small variations around 0-2%
-      const change24h = (Math.random() - 0.4) * 4
+      // 24h change calculation based on gold price data (stable value)
+      const goldPriceChange = goldPriceData?.change24h || 0
 
       return {
         totalValueUSD: totalValueUSD.toFixed(2),
         totalValueIDR: totalValueIDR.toFixed(0),
-        portfolioChange24h: change24h >= 0 ? `+${change24h.toFixed(2)}%` : `${change24h.toFixed(2)}%`,
+        portfolioChange24h: goldPriceChange >= 0 ? `+${goldPriceChange.toFixed(2)}%` : `${goldPriceChange.toFixed(2)}%`,
         idrtPercentage,
         goldTokenPercentage,
         bnbPercentage,

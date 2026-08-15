@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
@@ -27,6 +28,7 @@ const tabTriggerClass =
   "rounded-xl px-4 py-3 text-soft-white/60 data-[state=active]:bg-gold/15 data-[state=active]:text-gold data-[state=active]:shadow-none"
 
 export default function PortfolioPage() {
+  const router = useRouter()
   const [connectedAddress, setConnectedAddress] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -126,9 +128,8 @@ export default function PortfolioPage() {
     init()
 
     return () => {
-      if (connectedAddress) {
-        contractService.cleanup()
-      }
+      // Always cleanup, regardless of current connection state
+      contractService.cleanup()
     }
   }, [setupEventListeners, syncWalletBalances, loadTransactionHistory])
 
@@ -226,9 +227,9 @@ export default function PortfolioPage() {
               portfolioMetrics={portfolioMetrics}
               isSyncing={isSyncing}
               onSync={handleManualRefresh}
-              onSwap={() => window.location.href = "/swap"}
-              onStake={() => window.location.href = "/staking"}
-              onRedeem={() => window.location.href = "/redemption"}
+              onSwap={() => router.push("/swap")}
+              onStake={() => router.push("/staking")}
+              onRedeem={() => router.push("/redemption")}
             />
           </TabsContent>
 
