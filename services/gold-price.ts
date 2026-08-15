@@ -23,7 +23,7 @@ export class GoldPriceService {
   // Fallback: ExchangeRate API for USD→IDR conversion
   private static readonly EXCHANGE_RATE_API = "https://api.exchangerate-api.com/v4/latest/USD"
 
-  private static readonly CACHE_DURATION = 300000 // 5 minutes
+  private static readonly CACHE_DURATION = 900000 // 15 minutes
   private static readonly TROY_OUNCE_TO_GRAM = 31.1035
 
   // G-TOKEN pricing multipliers
@@ -54,9 +54,7 @@ export class GoldPriceService {
    * Primary source: GoldAPI.io
    */
   private static async fetchFromGoldAPI(): Promise<GoldPriceData | null> {
-    const apiKey = typeof window !== "undefined"
-      ? (process.env.NEXT_PUBLIC_GOLD_API_KEY || "")
-      : ""
+    const apiKey = process.env.NEXT_PUBLIC_GOLD_API_KEY || ""
 
     if (!apiKey) {
       console.warn("⚠️ NEXT_PUBLIC_GOLD_API_KEY not configured")
@@ -105,9 +103,7 @@ export class GoldPriceService {
    * Secondary source: Metals.dev
    */
   private static async fetchFromMetalsDev(): Promise<GoldPriceData | null> {
-    const apiKey = typeof window !== "undefined"
-      ? (process.env.NEXT_PUBLIC_METALS_DEV_API_KEY || "")
-      : ""
+    const apiKey = process.env.NEXT_PUBLIC_METALS_DEV_API_KEY || ""
 
     if (!apiKey) {
       console.warn("⚠️ NEXT_PUBLIC_METALS_DEV_API_KEY not configured")
