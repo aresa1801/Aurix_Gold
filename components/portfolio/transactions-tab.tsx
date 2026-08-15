@@ -4,13 +4,11 @@ import { Activity, CheckCircle, ArrowUpDown, Droplets, TrendingUp, Coins } from 
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import type { TransactionHistory } from "@/hooks/use-portfolio-data"
+import { PORTFOLIO_STYLES } from "./portfolio-styles"
 
 interface TransactionsTabProps {
   transactions: TransactionHistory[]
 }
-
-const primaryCardClass =
-  "rounded-2xl border border-soft-white/5 bg-navy-800/30 backdrop-blur-md hover:border-gold/20 transition-all duration-300"
 
 export function TransactionsTab({ transactions }: TransactionsTabProps) {
   const getTransactionIcon = (type: string) => {
@@ -37,7 +35,7 @@ export function TransactionsTab({ transactions }: TransactionsTabProps) {
   }
 
   return (
-    <Card className={primaryCardClass}>
+    <Card className={PORTFOLIO_STYLES.primaryCard}>
       <CardHeader className="p-6 pb-4">
         <CardTitle className="text-soft-white">Transaction History</CardTitle>
         <CardDescription className="text-soft-white/50">
@@ -54,7 +52,7 @@ export function TransactionsTab({ transactions }: TransactionsTabProps) {
         ) : (
           <div className="space-y-4">
             {transactions.map((tx) => (
-              <div key={tx.id} className={`${primaryCardClass} bg-navy-900/25 transition-all hover:bg-navy-900/40`}>
+              <div key={tx.id} className={`${PORTFOLIO_STYLES.primaryCard} bg-navy-900/25 transition-all hover:bg-navy-900/40`}>
                 <div className="grid gap-4 p-5 lg:grid-cols-[1.6fr_1fr_auto] lg:items-center">
                   <div className="flex items-start gap-4">
                     <div className="rounded-2xl border border-gold/15 bg-gold/10 p-3 text-gold">{getTransactionIcon(tx.type)}</div>

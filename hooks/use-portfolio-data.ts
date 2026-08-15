@@ -3,6 +3,10 @@ import { contractService } from "@/services/contracts"
 import { toast } from "@/hooks/use-toast"
 import { useGoldPrice } from "@/hooks/use-gold-price"
 
+// Conversion rate constants
+const BNB_TO_IDR_RATE = 15000000 // 1 BNB = 15,000,000 IDR
+const IDR_TO_USD_RATE = 15000 // 1 USD = 15,000 IDR
+
 export interface SynchronizedBalances {
   idrtBalance: string
   goldTokenBalance: string
@@ -83,10 +87,10 @@ export function usePortfolioData(connectedAddress: string | null) {
 
       const idrtValue = parseFloat(balanceData.idrtBalance)
       const goldValue = parseFloat(balanceData.goldTokenBalance) * currentGoldPriceIDR
-      const bnbValue = parseFloat(balanceData.bnbBalance) * 15000000
+      const bnbValue = parseFloat(balanceData.bnbBalance) * BNB_TO_IDR_RATE
 
       const totalValueIDR = idrtValue + goldValue + bnbValue
-      const totalValueUSD = totalValueIDR / 15000
+      const totalValueUSD = totalValueIDR / IDR_TO_USD_RATE
 
       const idrtPercentage = totalValueIDR > 0 ? (idrtValue / totalValueIDR) * 100 : 0
       const goldTokenPercentage = totalValueIDR > 0 ? (goldValue / totalValueIDR) * 100 : 0
@@ -187,6 +191,8 @@ export function usePortfolioData(connectedAddress: string | null) {
 
   const loadTransactionHistory = useCallback(async (address: string) => {
     try {
+      // TODO: Replace with real transaction history fetched from blockchain
+      // This is mock data for demonstration - should be replaced with actual transaction queries
       const mockTransactions: TransactionHistory[] = [
         {
           id: "1",

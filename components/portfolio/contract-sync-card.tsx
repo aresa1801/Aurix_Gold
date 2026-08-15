@@ -11,6 +11,7 @@ interface ContractSyncCardProps {
   balances: SynchronizedBalances
 }
 
+export function ContractSyncCard({ balances }: ContractSyncCardProps) {
   return (
     <Card className={PORTFOLIO_STYLES.primaryCard}>
       <CardHeader className="p-6 pb-4">

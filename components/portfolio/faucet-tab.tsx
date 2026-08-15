@@ -14,6 +14,7 @@ interface FaucetTabProps {
   onClaimSuccess: () => void
 }
 
+export function FaucetTab({ userAddress, balances, onClaimSuccess }: FaucetTabProps) {
   return (
     <div className="space-y-6">
       <FaucetStatus userAddress={userAddress} onClaimSuccess={onClaimSuccess} />

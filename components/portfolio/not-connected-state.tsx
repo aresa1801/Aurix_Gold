@@ -5,15 +5,13 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Wallet, AlertTriangle } from "lucide-react"
+import { PORTFOLIO_STYLES } from "./portfolio-styles"
 
 interface NotConnectedStateProps {
   error: string | null
   onConnect: () => void
   isLoading: boolean
 }
-
-const primaryCardClass =
-  "rounded-2xl border border-soft-white/5 bg-navy-800/30 backdrop-blur-md hover:border-gold/20 transition-all duration-300"
 
 export function NotConnectedState({ error, onConnect, isLoading }: NotConnectedStateProps) {
   return (
@@ -28,7 +26,7 @@ export function NotConnectedState({ error, onConnect, isLoading }: NotConnectedS
             </p>
           </div>
 
-          <Card className={`${primaryCardClass} mx-auto max-w-lg`}>
+          <Card className={`${PORTFOLIO_STYLES.primaryCard} mx-auto max-w-lg`}>
             <CardHeader className="p-6 pb-4">
               <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-gold/20 bg-gold/10 text-gold">
                 <Wallet className="h-6 w-6" />
