@@ -277,18 +277,29 @@ npm run dev
 
 ## API Limits
 
-⚠️ **IMPORTANT**: With 15-minute interval syncing:
+⚠️ **CRITICAL**: With 15-minute interval syncing:
 - **GoldAPI.io**: 100 requests/day (free tier)
-  - 15-min interval = 96 requests/day for sync alone
-  - Only 4 requests/day remaining for other usage
-  - Consider longer intervals (30-60 minutes) or upgrading plan for production
+  - 15-min interval = 96 requests/day (4 requests per hour)
+  - **ONLY 4 requests/day remaining** for other usage
+  - This leaves minimal buffer for errors or additional API calls
+  - **Recommendation**: For free-tier production use, increase interval to 30-60 minutes
 
 - **Metals.dev**: 100 requests/month (free tier fallback)
   - Currently has capacity
 
+### Recommended Configurations by Tier
+
+**Free Tier (GoldAPI.io + Metals.dev)**:
+- Sync every 30-60 minutes (safer quota usage)
+- Set in `vercel.json`: `"schedule": "0 */1 * * *"` (hourly) or `"0 0,6,12,18 * * *"` (every 6 hours)
+
+**Pro/Paid Tier**:
+- 15-minute interval is safe
+- Ensure CRON_SECRET is set for production
+
 ### Optimization Options
 If quota becomes insufficient:
-1. **Increase sync interval**: Change from 15 min to 30-60 min in `vercel.json`
+1. **Increase sync interval**: Change cron expression in `vercel.json`
 2. **Upgrade API plan**: GoldAPI.io offers paid tiers with higher limits
 3. **Use secondary source only**: Disable GoldAPI.io, rely on Metals.dev (slower updates)
 4. **Client-side caching**: Increase browser cache duration to reduce overall requests

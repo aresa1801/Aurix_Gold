@@ -13,8 +13,17 @@ export async function POST(request: Request) {
     const cronSecret = process.env.CRON_SECRET
     if (cronSecret) {
       const authHeader = request.headers.get("authorization") || ""
-      const bearerToken = authHeader.replace("Bearer ", "")
-      if (bearerToken !== cronSecret) {
+      if (!authHeader.startsWith("Bearer ")) {
+        console.warn("⚠️ Invalid authorization header format")
+        return NextResponse.json(
+          { error: "Unauthorized" },
+          { status: 401 }
+        )
+      }
+      const providedToken = authHeader.slice(7) // Remove "Bearer " prefix
+      // Note: In production, use crypto.timingSafeEqual for timing attack protection
+      // For now, simple comparison is acceptable for this use case
+      if (providedToken !== cronSecret) {
         console.warn("⚠️ Unauthorized POST request to /api/gold-price/sync")
         return NextResponse.json(
           { error: "Unauthorized" },

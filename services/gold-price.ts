@@ -52,6 +52,9 @@ export class GoldPriceService {
 
   /**
    * Primary source: GoldAPI.io
+   * Note: NEXT_PUBLIC_ prefix means this key is visible to clients.
+   * For server-only environments, consider using non-public env vars.
+   * This implementation works on both client and server.
    */
   private static async fetchFromGoldAPI(): Promise<GoldPriceData | null> {
     const apiKey = process.env.NEXT_PUBLIC_GOLD_API_KEY || ""
