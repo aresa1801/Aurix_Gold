@@ -433,6 +433,9 @@ const translations = {
     "redemption.processingTime": "Waktu Pemrosesan",
     "redemption.unlimited": "Tanpa Batas",
     "redemption.oneToTwo": "1-2 hari",
+    "redemption.grams": "gram",
+    "redemption.available": "Tersedia",
+    "redemption.requirements": "Persyaratan",
 
     // Swap Page
     "swap.title": "Pertukaran Token",
