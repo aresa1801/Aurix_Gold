@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { ArrowUpDown, TrendingUp, Coins, Database } from "lucide-react"
 import type { SynchronizedBalances, PortfolioMetrics } from "@/hooks/use-portfolio-data"
+import { PORTFOLIO_STYLES, BUTTON_STYLES } from "./portfolio-styles"
+import { formatNumber } from "./portfolio-utils"
 
 interface OverviewTabProps {
   balances: SynchronizedBalances
@@ -15,11 +17,6 @@ interface OverviewTabProps {
   onRedeem?: () => void
 }
 
-const primaryCardClass =
-  "rounded-2xl border border-soft-white/5 bg-navy-800/30 backdrop-blur-md hover:border-gold/20 transition-all duration-300"
-const innerCardClass = "rounded-2xl border border-soft-white/5 bg-navy-900/30"
-const labelClass = "text-soft-white/50"
-
 export function OverviewTab({
   balances,
   portfolioMetrics,
@@ -29,16 +26,6 @@ export function OverviewTab({
   onStake,
   onRedeem,
 }: OverviewTabProps) {
-  const formatNumber = (num: string | number) => {
-    const n = typeof num === "string" ? parseFloat(num) : num
-    if (n >= 1000000) {
-      return `${(n / 1000000).toFixed(2)}M`
-    } else if (n >= 1000) {
-      return `${(n / 1000).toFixed(2)}K`
-    }
-    return n.toLocaleString()
-  }
-
   const assetBreakdown = [
     {
       title: "IDRT",
@@ -71,7 +58,7 @@ export function OverviewTab({
 
   return (
     <div className="grid gap-6 xl:grid-cols-[1.25fr_0.95fr]">
-      <Card className={primaryCardClass}>
+      <Card className={PORTFOLIO_STYLES.primaryCard}>
         <CardHeader className="p-6 pb-4">
           <CardTitle className="text-soft-white">Asset Breakdown</CardTitle>
           <CardDescription className="text-soft-white/50">
@@ -80,7 +67,7 @@ export function OverviewTab({
         </CardHeader>
         <CardContent className="space-y-4 p-6 pt-0">
           {assetBreakdown.map((asset) => (
-            <div key={asset.title} className={`${innerCardClass} p-5 transition-all hover:bg-navy-900/50`}>
+            <div key={asset.title} className={`${PORTFOLIO_STYLES.innerCard} p-5 transition-all hover:bg-navy-900/50`}>
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex items-center gap-4">
                   <div className={`rounded-2xl border border-soft-white/10 bg-soft-white/5 p-3 ${asset.accent}`}>
@@ -105,64 +92,51 @@ export function OverviewTab({
       </Card>
 
       <div className="space-y-6">
-        <Card className={primaryCardClass}>
+        <Card className={PORTFOLIO_STYLES.primaryCard}>
           <CardHeader className="p-6 pb-4">
             <CardTitle className="text-soft-white">Quick Actions</CardTitle>
             <CardDescription className="text-soft-white/50">Common actions for portfolio management and manual synchronization.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3 p-6 pt-0">
-            <Button
-              onClick={onSwap}
-              className="w-full rounded-xl bg-prosperity text-navy-900 hover:bg-prosperity/80 transition-all active:scale-95"
-            >
+            <Button onClick={onSwap} className={`w-full ${BUTTON_STYLES.primary}`}>
               <ArrowUpDown className="mr-2 h-4 w-4" />
               Swap Tokens
             </Button>
-            <Button
-              onClick={onStake}
-              className="w-full rounded-xl bg-gold text-navy-900 hover:bg-gold-600 transition-all active:scale-95"
-            >
+            <Button onClick={onStake} className={`w-full ${BUTTON_STYLES.secondary}`}>
               <TrendingUp className="mr-2 h-4 w-4" />
               Stake G-TOKEN
             </Button>
-            <Button
-              onClick={onRedeem}
-              className="w-full rounded-xl bg-soft-white text-navy-900 hover:bg-soft-white/80 transition-all active:scale-95"
-            >
+            <Button onClick={onRedeem} className={`w-full ${BUTTON_STYLES.tertiary}`}>
               <Coins className="mr-2 h-4 w-4" />
               Redeem Gold
             </Button>
-            <Button
-              onClick={onSync}
-              disabled={isSyncing}
-              className="w-full rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-all active:scale-95 disabled:opacity-50"
-            >
+            <Button onClick={onSync} disabled={isSyncing} className={`w-full ${BUTTON_STYLES.sync}`}>
               <Database className="mr-2 h-4 w-4" />
               Force Sync
             </Button>
           </CardContent>
         </Card>
 
-        <Card className={primaryCardClass}>
+        <Card className={PORTFOLIO_STYLES.primaryCard}>
           <CardHeader className="p-6 pb-4">
             <CardTitle className="text-soft-white">Allocation Snapshot</CardTitle>
             <CardDescription className="text-soft-white/50">Portfolio concentration and readiness signals for the current wallet state.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 p-6 pt-0">
-            <div className={`${innerCardClass} p-4 hover:bg-navy-900/50 transition-all`}>
-              <p className={`${labelClass} text-sm`}>Dominant asset</p>
+            <div className={`${PORTFOLIO_STYLES.innerCard} p-4 hover:bg-navy-900/50 transition-all`}>
+              <p className={`${PORTFOLIO_STYLES.label} text-sm`}>Dominant asset</p>
               <p className="mt-1 font-semibold text-soft-white">
                 {assetBreakdown.reduce((prev, current) => (current.allocation > prev.allocation ? current : prev)).title}
               </p>
             </div>
-            <div className={`${innerCardClass} p-4 hover:bg-navy-900/50 transition-all`}>
-              <p className={`${labelClass} text-sm`}>Claim readiness</p>
+            <div className={`${PORTFOLIO_STYLES.innerCard} p-4 hover:bg-navy-900/50 transition-all`}>
+              <p className={`${PORTFOLIO_STYLES.label} text-sm`}>Claim readiness</p>
               <p className="mt-1 font-semibold text-soft-white">
                 {balances.faucetStatus.canClaim ? "Faucet claim available" : "Waiting for cooldown"}
               </p>
             </div>
-            <div className={`${innerCardClass} p-4 hover:bg-navy-900/50 transition-all`}>
-              <p className={`${labelClass} text-sm`}>Auto refresh cadence</p>
+            <div className={`${PORTFOLIO_STYLES.innerCard} p-4 hover:bg-navy-900/50 transition-all`}>
+              <p className={`${PORTFOLIO_STYLES.label} text-sm`}>Auto refresh cadence</p>
               <p className="mt-1 font-semibold text-soft-white">Every 30 seconds</p>
             </div>
           </CardContent>
