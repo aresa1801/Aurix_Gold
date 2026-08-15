@@ -145,7 +145,7 @@ import {
 } from "@/components/portfolio/portfolio-utils"
 
 const formatted = formatNumber(1000000) // "1.00M"
-const shortened = shortenAddress("0x1234567890...") // "0x1234...7890"
+const shortened = shortenAddress("0x1234567890abcdef") // "0x1234...cdef"
 const currency = formatCurrency(5000000) // "Rp 5.00M"
 ```
 

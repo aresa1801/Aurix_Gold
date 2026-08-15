@@ -23,9 +23,7 @@ import { TransactionsTab } from "@/components/portfolio/transactions-tab"
 import { AnalyticsTab } from "@/components/portfolio/analytics-tab"
 import { NotConnectedState } from "@/components/portfolio/not-connected-state"
 import { LoadingState } from "@/components/portfolio/loading-state"
-
-const tabTriggerClass =
-  "rounded-xl px-4 py-3 text-soft-white/60 data-[state=active]:bg-gold/15 data-[state=active]:text-gold data-[state=active]:shadow-none"
+import { PORTFOLIO_STYLES } from "@/components/portfolio/portfolio-styles"
 
 export default function PortfolioPage() {
   const router = useRouter()
@@ -202,19 +200,19 @@ export default function PortfolioPage() {
         {/* Tabs Section */}
         <Tabs defaultValue="overview" className="space-y-6">
           <TabsList className="grid h-auto w-full grid-cols-2 gap-2 rounded-2xl border border-soft-white/5 bg-navy-800/30 p-2 backdrop-blur-md lg:grid-cols-4">
-            <TabsTrigger value="overview" className={tabTriggerClass}>
+            <TabsTrigger value="overview" className={PORTFOLIO_STYLES.tabTrigger}>
               <PieChart className="mr-2 h-4 w-4" />
               Overview
             </TabsTrigger>
-            <TabsTrigger value="faucet" className={tabTriggerClass}>
+            <TabsTrigger value="faucet" className={PORTFOLIO_STYLES.tabTrigger}>
               <Droplets className="mr-2 h-4 w-4" />
               Faucet
             </TabsTrigger>
-            <TabsTrigger value="transactions" className={tabTriggerClass}>
+            <TabsTrigger value="transactions" className={PORTFOLIO_STYLES.tabTrigger}>
               <BarChart3 className="mr-2 h-4 w-4" />
               Transactions
             </TabsTrigger>
-            <TabsTrigger value="analytics" className={tabTriggerClass}>
+            <TabsTrigger value="analytics" className={PORTFOLIO_STYLES.tabTrigger}>
               <Activity className="mr-2 h-4 w-4" />
               Analytics
             </TabsTrigger>

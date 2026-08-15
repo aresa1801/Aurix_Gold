@@ -197,9 +197,9 @@ export function usePortfolioData(connectedAddress: string | null) {
         {
           id: "1",
           type: "claim",
-          amount: balances.faucetStatus.claimAmount,
+          amount: "1000000", // Placeholder amount - will be dynamic when integrated
           token: "IDRT",
-          timestamp: balances.faucetStatus.lastClaimTime || Date.now() - 3600000,
+          timestamp: Date.now() - 3600000,
           status: "completed",
           hash: "0x1234...5678",
           toAddress: address,
@@ -229,7 +229,7 @@ export function usePortfolioData(connectedAddress: string | null) {
     } catch (error) {
       console.error("Failed to load transaction history:", error)
     }
-  }, [balances.faucetStatus.claimAmount, balances.faucetStatus.lastClaimTime])
+  }, []) // No dependencies needed since mock data is static)
 
   const resetPortfolioData = useCallback(() => {
     setBalances({

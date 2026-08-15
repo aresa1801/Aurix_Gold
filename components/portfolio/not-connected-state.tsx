@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Wallet, AlertTriangle } from "lucide-react"
-import { PORTFOLIO_STYLES } from "./portfolio-styles"
+import { PORTFOLIO_STYLES, BUTTON_STYLES } from "./portfolio-styles"
 
 interface NotConnectedStateProps {
   error: string | null
@@ -40,7 +40,7 @@ export function NotConnectedState({ error, onConnect, isLoading }: NotConnectedS
               <Button
                 onClick={onConnect}
                 disabled={isLoading}
-                className="w-full rounded-xl bg-prosperity text-navy-900 hover:bg-prosperity/80 transition-all active:scale-95 disabled:opacity-50"
+                className={`w-full ${BUTTON_STYLES.primary} disabled:opacity-50`}
               >
                 <Wallet className="mr-2 h-4 w-4" />
                 {isLoading ? "Connecting..." : "Connect MetaMask"}

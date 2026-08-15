@@ -4,7 +4,7 @@ import { Activity, CheckCircle, ArrowUpDown, Droplets, TrendingUp, Coins } from 
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import type { TransactionHistory } from "@/hooks/use-portfolio-data"
-import { PORTFOLIO_STYLES } from "./portfolio-styles"
+import { PORTFOLIO_STYLES, TRANSACTION_STATUS_STYLES } from "./portfolio-styles"
 
 interface TransactionsTabProps {
   transactions: TransactionHistory[]
@@ -26,12 +26,6 @@ export function TransactionsTab({ transactions }: TransactionsTabProps) {
       default:
         return <Activity className="h-4 w-4" />
     }
-  }
-
-  const getStatusBadgeClass = (status: TransactionHistory["status"]) => {
-    if (status === "completed") return "border-prosperity/30 bg-prosperity/15 text-prosperity"
-    if (status === "pending") return "border-gold/30 bg-gold/15 text-gold"
-    return "border-red-500/30 bg-red-500/15 text-red-400"
   }
 
   return (
@@ -83,7 +77,7 @@ export function TransactionsTab({ transactions }: TransactionsTabProps) {
                   </div>
 
                   <div className="space-y-2 text-left lg:text-right">
-                    <Badge className={getStatusBadgeClass(tx.status)}>
+                    <Badge className={TRANSACTION_STATUS_STYLES[tx.status]}>
                       {tx.status === "completed" && <CheckCircle className="mr-1 h-3 w-3" />}
                       {tx.status}
                     </Badge>
