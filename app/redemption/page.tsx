@@ -19,6 +19,15 @@ const pegadaianOutlets = [
   { id: "bdg001", name: "outlet.bandung", address: "outlet.bandung.address" },
 ]
 
+const cardClass =
+  "rounded-2xl border border-soft-white/5 bg-navy-800/30 backdrop-blur-md hover:border-gold/20 transition-all duration-300"
+
+const steps = [
+  { id: 1, icon: MapPin, titleKey: "redemption.visitOutlet", descriptionKey: "redemption.selectPickupLocation" },
+  { id: 2, icon: QrCode, titleKey: "redemption.redemptionCode", descriptionKey: "redemption.generateRedemptionCode" },
+  { id: 3, icon: CheckCircle, titleKey: "redemption.receiveGold", descriptionKey: "redemption.getPhysicalGold" },
+]
+
 export default function RedemptionPage() {
   const [amount, setAmount] = useState("")
   const [selectedOutlet, setSelectedOutlet] = useState("")
@@ -36,250 +45,289 @@ export default function RedemptionPage() {
   const goldWeight = amount ? Number.parseFloat(amount).toFixed(6) : "0"
 
   return (
-    <div className="min-h-screen py-8 px-4">
+    <div className="min-h-screen py-16 px-4">
       <div className="container mx-auto max-w-6xl">
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-soft-white mb-2">{t("redemption.title")}</h1>
-          <p className="text-soft-white/70">{t("redemption.subtitle")}</p>
+        <div className="mb-10 text-center">
+          <p className="text-sm uppercase tracking-[0.3em] text-soft-white/50">Aurix Redemption</p>
+          <h1 className="mt-2 text-4xl font-bold text-soft-white md:text-5xl">{t("redemption.title")}</h1>
+          <p className="mx-auto mt-3 max-w-2xl text-soft-white/50">{t("redemption.subtitle")}</p>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Redemption Form */}
-          <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm transition-all duration-300 hover:border-gold/40 hover:shadow-lg hover:shadow-gold/10">
-            <CardHeader>
-              <CardTitle className="text-gold flex items-center">
-                <Send className="h-5 w-5 mr-2" />
-                {t("redemption.redeemTokens")}
-              </CardTitle>
-              <CardDescription className="text-soft-white/70">{t("redemption.burnTokens")}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <Alert className="border-gold/20 bg-gold/10">
-                <AlertTriangle className="h-4 w-4 text-gold" />
-                <AlertDescription className="text-gold">{t("redemption.requiresKYC")}</AlertDescription>
-              </Alert>
-
-              <div className="space-y-2">
-                <Label className="text-soft-white">{t("redemption.tokensToRedeem")}</Label>
-                <Input
-                  type="number"
-                  placeholder="0.000000"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="bg-navy-900/50 border-gold/20 text-soft-white text-lg h-12"
-                />
-                <div className="text-sm text-soft-white/50">{t("redemption.available")}: 125.500000 G-TOKEN</div>
-              </div>
-
-              <div className="bg-navy-900/50 rounded-lg p-4 space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-soft-white/70">{t("redemption.goldWeight")}</span>
-                  <span className="text-gold font-semibold">
-                    {goldWeight} {t("redemption.grams")}
-                  </span>
+        <div className="grid gap-8 xl:grid-cols-[1.35fr_1fr]">
+          <div className="space-y-8">
+            <Card className={cardClass}>
+              <CardHeader className="pb-4">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-soft-white font-bold">
+                      <Send className="h-5 w-5 text-gold" />
+                      {t("redemption.redeemTokens")}
+                    </CardTitle>
+                    <CardDescription className="mt-2 text-soft-white/50">{t("redemption.burnTokens")}</CardDescription>
+                  </div>
+                  <Badge className="border border-gold/20 bg-gold/10 text-gold">{t("redemption.requirements")}</Badge>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-soft-white/70">{t("redemption.estimatedValue")}</span>
-                  <span className="text-prosperity">₹{goldValue} IDRX</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-soft-white/70">{t("redemption.processingFee")}</span>
-                  <span className="text-soft-white">₹50 IDRX</span>
-                </div>
-              </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <Alert className="rounded-2xl border-gold/20 bg-gold/10">
+                  <AlertTriangle className="h-4 w-4 text-gold" />
+                  <AlertDescription className="text-gold">{t("redemption.requiresKYC")}</AlertDescription>
+                </Alert>
 
-              <div className="space-y-2">
-                <Label className="text-soft-white">{t("redemption.pegadaianOutlet")}</Label>
-                <Select value={selectedOutlet} onValueChange={setSelectedOutlet}>
-                  <SelectTrigger className="bg-navy-900/50 border-gold/20 text-soft-white">
-                    <SelectValue placeholder={t("redemption.selectPickupLocation")} />
-                  </SelectTrigger>
-                  <SelectContent className="bg-navy-800 border-gold/20">
-                    {pegadaianOutlets.map((outlet) => (
-                      <SelectItem key={outlet.id} value={outlet.id}>
-                        <div>
-                          <div className="font-medium">{t(outlet.name)}</div>
-                          <div className="text-sm text-soft-white/70">{t(outlet.address)}</div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                <div className="grid gap-6 lg:grid-cols-[1.25fr_0.95fr]">
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <Label className="text-soft-white/50">{t("redemption.tokensToRedeem")}</Label>
+                      <Input
+                        type="number"
+                        placeholder="0.000000"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        className="h-12 rounded-xl border-soft-white/10 bg-navy-900/50 text-lg text-soft-white placeholder:text-soft-white/30"
+                      />
+                      <div className="text-sm text-soft-white/50">{t("redemption.available")}: 125.500000 G-TOKEN</div>
+                    </div>
 
-              <Button
-                className="w-full bg-gold hover:bg-gold-600 text-navy-900 font-semibold h-12"
-                onClick={generateRedeemCode}
-                disabled={!amount || !selectedOutlet || Number.parseFloat(amount) <= 0}
-              >
-                {t("redemption.generateRedemptionCode")}
-              </Button>
-            </CardContent>
-          </Card>
+                    <div className="space-y-2">
+                      <Label className="text-soft-white/50">{t("redemption.pegadaianOutlet")}</Label>
+                      <Select value={selectedOutlet} onValueChange={setSelectedOutlet}>
+                        <SelectTrigger className="h-12 rounded-xl border-soft-white/10 bg-navy-900/50 text-soft-white">
+                          <SelectValue placeholder={t("redemption.selectPickupLocation")} />
+                        </SelectTrigger>
+                        <SelectContent className="border-soft-white/10 bg-navy-800 text-soft-white">
+                          {pegadaianOutlets.map((outlet) => (
+                            <SelectItem key={outlet.id} value={outlet.id}>
+                              <div>
+                                <div className="font-medium">{t(outlet.name)}</div>
+                                <div className="text-sm text-soft-white/50">{t(outlet.address)}</div>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
 
-          {/* QR Code / Instructions */}
-          <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm transition-all duration-300 hover:border-gold/40 hover:shadow-lg hover:shadow-gold/10">
-            <CardHeader>
-              <CardTitle className="text-gold flex items-center">
-                <QrCode className="h-5 w-5 mr-2" />
-                {showQR ? t("redemption.redemptionCode") : t("redemption.howItWorks")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {showQR ? (
-                <div className="space-y-6">
-                  <div className="text-center">
-                    <div className="mx-auto mb-4 h-48 w-48 bg-soft-white rounded-lg flex items-center justify-center">
-                      <div className="text-center">
-                        <QrCode className="h-16 w-16 mx-auto mb-2 text-navy-900" />
-                        <div className="text-xs text-navy-900 font-mono">{redeemCode}</div>
+                  <div className="rounded-2xl border border-soft-white/5 bg-navy-900/50 p-5">
+                    <p className="text-sm text-soft-white/50">{t("redemption.redemptionDetails")}</p>
+                    <div className="mt-5 space-y-4">
+                      <div className="rounded-2xl border border-gold/10 bg-gold/10 p-4">
+                        <p className="text-xs uppercase tracking-[0.25em] text-soft-white/50">{t("redemption.goldWeight")}</p>
+                        <p className="mt-2 text-3xl font-bold text-gold">
+                          {goldWeight} <span className="text-base text-soft-white/50">{t("redemption.grams")}</span>
+                        </p>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-soft-white/50">{t("redemption.estimatedValue")}</span>
+                        <span className="font-semibold text-prosperity">₹{goldValue} IDRX</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-soft-white/50">{t("redemption.processingFee")}</span>
+                        <span className="text-soft-white">₹50 IDRX</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-soft-white/50">{t("redemption.minimumAmount")}</span>
+                        <span className="text-soft-white">1.0 G-TOKEN</span>
                       </div>
                     </div>
-                    <Badge className="bg-prosperity/20 text-prosperity border-prosperity/30">
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      {t("redemption.codeGenerated")}
+                  </div>
+                </div>
+
+                <Button
+                  className="h-12 w-full rounded-xl bg-gold font-semibold text-navy-900 hover:bg-gold-600"
+                  onClick={generateRedeemCode}
+                  disabled={!amount || !selectedOutlet || Number.parseFloat(amount) <= 0}
+                >
+                  {t("redemption.generateRedemptionCode")}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className={cardClass}>
+              <CardHeader>
+                <CardTitle className="text-soft-white font-bold">
+                  {showQR ? t("redemption.redemptionCode") : t("redemption.howItWorks")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {showQR ? (
+                  <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+                    <div className="rounded-2xl border border-soft-white/5 bg-navy-900/50 p-6 text-center">
+                      <div className="mx-auto flex h-52 w-52 items-center justify-center rounded-2xl bg-soft-white">
+                        <div className="text-center">
+                          <QrCode className="mx-auto mb-3 h-16 w-16 text-navy-900" />
+                          <div className="text-xs font-mono text-navy-900">{redeemCode}</div>
+                        </div>
+                      </div>
+                      <Badge className="mt-5 border border-prosperity/30 bg-prosperity/20 text-prosperity">
+                        <CheckCircle className="mr-1 h-3 w-3" />
+                        {t("redemption.codeGenerated")}
+                      </Badge>
+                      <div className="mt-5 rounded-2xl border border-gold/10 bg-gold/10 p-4">
+                        <p className="text-sm text-soft-white/50">{t("redemption.redemptionCode")}</p>
+                        <div className="mt-2 rounded-xl bg-navy-950/40 p-3 text-center font-mono text-lg text-gold">
+                          {redeemCode}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      {[
+                        {
+                          number: 1,
+                          title: t("redemption.visitOutlet"),
+                          description: t("redemption.bringValidID"),
+                          active: true,
+                        },
+                        {
+                          number: 2,
+                          title: t("redemption.verificationProcess"),
+                          description: t("redemption.staffWillVerify"),
+                          active: true,
+                        },
+                        {
+                          number: 3,
+                          title: t("redemption.receiveGold"),
+                          description: t("redemption.getPhysicalGold"),
+                          active: false,
+                        },
+                      ].map((step) => (
+                        <div
+                          key={step.number}
+                          className="flex gap-4 rounded-2xl border border-soft-white/5 bg-navy-900/50 p-4"
+                        >
+                          <div
+                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+                              step.active ? "bg-gold text-navy-900" : "bg-soft-white/10 text-soft-white/50"
+                            }`}
+                          >
+                            {step.number}
+                          </div>
+                          <div>
+                            <p className="text-soft-white font-bold">{step.title}</p>
+                            <p className="mt-1 text-sm text-soft-white/50">{step.description}</p>
+                          </div>
+                        </div>
+                      ))}
+
+                      <Alert className="rounded-2xl border-prosperity/20 bg-prosperity/10">
+                        <CheckCircle className="h-4 w-4 text-prosperity" />
+                        <AlertDescription className="text-prosperity">{t("redemption.codeValidFor")}</AlertDescription>
+                      </Alert>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="grid gap-4 md:grid-cols-3">
+                      {steps.map((step) => {
+                        const Icon = step.icon
+
+                        return (
+                          <div key={step.id} className="rounded-2xl border border-soft-white/5 bg-navy-900/50 p-5">
+                            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gold/10">
+                              <Icon className="h-5 w-5 text-gold" />
+                            </div>
+                            <div className="mt-4 flex items-center gap-2">
+                              <span className="text-xs font-semibold uppercase tracking-[0.25em] text-soft-white/50">
+                                Step {step.id}
+                              </span>
+                            </div>
+                            <h4 className="mt-2 text-soft-white font-bold">{t(step.titleKey)}</h4>
+                            <p className="mt-2 text-sm text-soft-white/50">{t(step.descriptionKey)}</p>
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    <div className="rounded-2xl border border-soft-white/5 bg-navy-900/50 p-5">
+                      <h4 className="text-soft-white font-bold">{t("redemption.requirements")}</h4>
+                      <ul className="mt-4 space-y-2 text-sm text-soft-white/50">
+                        <li>• Completed KYC verification</li>
+                        <li>• Valid government-issued ID</li>
+                        <li>• Minimum redemption: 1.0 G-TOKEN</li>
+                        <li>• Processing fee: ₹50 IDRX</li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card className={cardClass}>
+            <CardHeader>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-soft-white font-bold">
+                    <CheckCircle className="h-5 w-5 text-prosperity" />
+                    {t("redemption.redemptionDetails")}
+                  </CardTitle>
+                  <CardDescription className="mt-2 text-soft-white/50">{t("redemption.importantInformation")}</CardDescription>
+                </div>
+                <Badge className="border border-prosperity/20 bg-prosperity/10 text-prosperity">
+                  {showQR ? t("redemption.codeGenerated") : t("redemption.processingTime")}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="rounded-2xl border border-soft-white/5 bg-navy-900/50 p-5">
+                <h4 className="text-soft-white font-bold">{t("redemption.exchangeProcess")}</h4>
+                <ul className="mt-4 space-y-3 text-sm text-soft-white/50">
+                  <li className="flex items-start gap-3">
+                    <span className="mt-1 h-2 w-2 rounded-full bg-gold" />
+                    <span>{t("redemption.tokensAreBurned")}</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="mt-1 h-2 w-2 rounded-full bg-gold" />
+                    <span>{t("redemption.goldReleased")}</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="mt-1 h-2 w-2 rounded-full bg-gold" />
+                    <span>{t("redemption.availableForPickup")}</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="mt-1 h-2 w-2 rounded-full bg-gold" />
+                    <span>{t("redemption.formVerified")}</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="rounded-2xl border border-prosperity/20 bg-prosperity/10 p-5">
+                <h4 className="text-prosperity font-bold">{t("redemption.quickFacts")}</h4>
+                <div className="mt-4 space-y-3 text-sm">
+                  <div className="flex justify-between gap-4">
+                    <span className="text-soft-white/50">{t("redemption.minimumAmount")}:</span>
+                    <span className="text-prosperity">1.0 G-TOKEN</span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-soft-white/50">{t("redemption.maximumAmount")}:</span>
+                    <span className="text-prosperity">{t("redemption.unlimited")}</span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-soft-white/50">{t("redemption.processingTime")}:</span>
+                    <span className="text-prosperity">{t("redemption.oneToTwo")}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-soft-white/5 bg-navy-900/50 p-5">
+                <p className="text-sm text-soft-white/50">Status</p>
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-soft-white/50">{t("redemption.requiresKYC")}</span>
+                    <Badge className="border border-gold/20 bg-gold/10 text-gold">KYC</Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-soft-white/50">{t("redemption.redemptionCode")}</span>
+                    <Badge
+                      className={`${
+                        showQR
+                          ? "border-prosperity/30 bg-prosperity/20 text-prosperity"
+                          : "border-soft-white/10 bg-soft-white/5 text-soft-white/50"
+                      }`}
+                    >
+                      {showQR ? t("redemption.codeGenerated") : t("redemption.generateRedemptionCode")}
                     </Badge>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="bg-navy-900/50 rounded-lg p-4">
-                      <h4 className="text-soft-white font-semibold mb-2">{t("redemption.redemptionCode")}</h4>
-                      <div className="font-mono text-gold text-lg text-center bg-gold/10 rounded p-2">{redeemCode}</div>
-                    </div>
-
-                    <div className="space-y-3 text-sm">
-                      <div className="flex items-start space-x-3">
-                        <div className="h-6 w-6 rounded-full bg-gold text-navy-900 flex items-center justify-center text-xs font-bold">
-                          1
-                        </div>
-                        <div>
-                          <p className="text-soft-white font-medium">{t("redemption.visitOutlet")}</p>
-                          <p className="text-soft-white/70">{t("redemption.bringValidID")}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start space-x-3">
-                        <div className="h-6 w-6 rounded-full bg-gold text-navy-900 flex items-center justify-center text-xs font-bold">
-                          2
-                        </div>
-                        <div>
-                          <p className="text-soft-white font-medium">{t("redemption.verificationProcess")}</p>
-                          <p className="text-soft-white/70">{t("redemption.staffWillVerify")}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start space-x-3">
-                        <div className="h-6 w-6 rounded-full bg-gold text-navy-900 flex items-center justify-center text-xs font-bold">
-                          3
-                        </div>
-                        <div>
-                          <p className="text-soft-white font-medium">{t("redemption.receiveGold")}</p>
-                          <p className="text-soft-white/70">{t("redemption.getPhysicalGold")}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Alert className="border-prosperity/20 bg-prosperity/10">
-                    <CheckCircle className="h-4 w-4 text-prosperity" />
-                    <AlertDescription className="text-prosperity">{t("redemption.codeValidFor")}</AlertDescription>
-                  </Alert>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  <div className="space-y-4">
-                    <div className="flex items-start space-x-3">
-                      <div className="h-8 w-8 rounded-full bg-gold/20 flex items-center justify-center">
-                        <MapPin className="h-4 w-4 text-gold" />
-                      </div>
-                      <div>
-                        <h4 className="text-soft-white font-semibold mb-1">{t("redemption.visitOutlet")}</h4>
-                        <p className="text-soft-white/70 text-sm">{t("redemption.selectPickupLocation")}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start space-x-3">
-                      <div className="h-8 w-8 rounded-full bg-gold/20 flex items-center justify-center">
-                        <QrCode className="h-4 w-4 text-gold" />
-                      </div>
-                      <div>
-                        <h4 className="text-soft-white font-semibold mb-1">{t("redemption.redemptionCode")}</h4>
-                        <p className="text-soft-white/70 text-sm">{t("redemption.generateRedemptionCode")}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start space-x-3">
-                      <div className="h-8 w-8 rounded-full bg-gold/20 flex items-center justify-center">
-                        <CheckCircle className="h-4 w-4 text-gold" />
-                      </div>
-                      <div>
-                        <h4 className="text-soft-white font-semibold mb-1">{t("redemption.receiveGold")}</h4>
-                        <p className="text-soft-white/70 text-sm">{t("redemption.getPhysicalGold")}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-navy-900/50 rounded-lg p-4">
-                    <h4 className="text-soft-white font-semibold mb-2">{t("redemption.requirements")}</h4>
-                    <ul className="space-y-1 text-sm text-soft-white/70">
-                      <li>• Completed KYC verification</li>
-                      <li>• Valid government-issued ID</li>
-                      <li>• Minimum redemption: 1.0 G-TOKEN</li>
-                      <li>• Processing fee: ₹50 IDRX</li>
-                    </ul>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="bg-navy-800/50 border-prosperity/20 backdrop-blur-sm transition-all duration-300 hover:border-prosperity/40 hover:shadow-lg hover:shadow-prosperity/10">
-            <CardHeader>
-              <CardTitle className="text-prosperity flex items-center">
-                <CheckCircle className="h-5 w-5 mr-2" />
-                {t("redemption.redemptionDetails")}
-              </CardTitle>
-              <CardDescription className="text-soft-white/70">{t("redemption.importantInformation")}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="bg-navy-900/50 rounded-lg p-4">
-                  <h4 className="text-soft-white font-semibold mb-3">{t("redemption.exchangeProcess")}</h4>
-                  <ul className="space-y-2 text-sm text-soft-white/70">
-                    <li className="flex items-start">
-                      <span className="text-gold mr-2">•</span>
-                      <span>{t("redemption.tokensAreBurned")}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-gold mr-2">•</span>
-                      <span>{t("redemption.goldReleased")}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-gold mr-2">•</span>
-                      <span>{t("redemption.availableForPickup")}</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="text-gold mr-2">•</span>
-                      <span>{t("redemption.formVerified")}</span>
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="bg-prosperity/10 border border-prosperity/20 rounded-lg p-4">
-                  <h4 className="text-prosperity font-semibold mb-2">{t("redemption.quickFacts")}</h4>
-                  <div className="space-y-1 text-sm text-soft-white/70">
-                    <div className="flex justify-between">
-                      <span>{t("redemption.minimumAmount")}:</span>
-                      <span className="text-prosperity">1.0 G-TOKEN</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>{t("redemption.maximumAmount")}:</span>
-                      <span className="text-prosperity">{t("redemption.unlimited")}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>{t("redemption.processingTime")}:</span>
-                      <span className="text-prosperity">{t("redemption.oneToTwo")}</span>
-                    </div>
                   </div>
                 </div>
               </div>
