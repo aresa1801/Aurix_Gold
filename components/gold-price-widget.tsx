@@ -20,7 +20,7 @@ export function GoldPriceWidget({ compact = false, showDetails = true }: GoldPri
     data: goldPriceData,
     isLoading,
     error,
-    refetch,
+    refresh,
   } = useGoldPrice({
     autoRefresh: true,
     refreshInterval: 30000, // 30 seconds
@@ -101,7 +101,7 @@ export function GoldPriceWidget({ compact = false, showDetails = true }: GoldPri
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => refetch()}
+                onClick={() => refresh()}
                 disabled={isLoading}
                 className="text-soft-white/70 hover:text-gold p-1"
               >
@@ -127,7 +127,7 @@ export function GoldPriceWidget({ compact = false, showDetails = true }: GoldPri
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => refetch()}
+              onClick={() => refresh()}
               disabled={isLoading}
               className="text-soft-white/70 hover:text-gold"
             >
@@ -145,7 +145,7 @@ export function GoldPriceWidget({ compact = false, showDetails = true }: GoldPri
         ) : error ? (
           <div className="text-center py-4">
             <p className="text-red-400 mb-2">Failed to load price data</p>
-            <Button variant="outline" size="sm" onClick={() => refetch()}>
+            <Button variant="outline" size="sm" onClick={() => refresh()}>
               Retry
             </Button>
           </div>
