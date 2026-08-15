@@ -50,15 +50,23 @@ export async function GET() {
 /**
  * POST /api/gold-price
  * Force refresh of gold price cache
- * Requires authentication in production
+ * Requires CRON_SECRET if configured in environment
  */
 export async function POST(request: Request) {
   try {
-    // In production, add authentication check here
-    // const authHeader = request.headers.get('authorization')
-    // if (!authHeader?.startsWith('Bearer ')) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    // }
+    // Verify authorization token if CRON_SECRET is configured
+    const cronSecret = process.env.CRON_SECRET
+    if (cronSecret) {
+      const authHeader = request.headers.get("authorization") || ""
+      const bearerToken = authHeader.replace("Bearer ", "")
+      if (bearerToken !== cronSecret) {
+        console.warn("⚠️ Unauthorized POST request to /api/gold-price")
+        return NextResponse.json(
+          { error: "Unauthorized" },
+          { status: 401 }
+        )
+      }
+    }
 
     console.log("🔄 API: Force refreshing gold price...")
     const priceData = await GoldPriceService.forceRefresh()

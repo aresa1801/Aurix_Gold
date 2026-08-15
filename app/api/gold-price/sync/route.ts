@@ -4,27 +4,24 @@ import { NextResponse } from "next/server"
 /**
  * POST /api/gold-price/sync
  * Synchronize gold price every 15 minutes
- * Can be called by:
- * 1. Vercel Cron (set in vercel.json)
- * 2. External cron services
- * 3. Manual API calls with auth token
+ * Called by Vercel Cron or external services
+ * Requires CRON_SECRET if configured in environment
  */
 export async function POST(request: Request) {
   try {
-    // Verify authorization token (optional, for production)
-    // Uncomment and configure for production use
-    // const authHeader = request.headers.get("authorization")
-    // const cronSecret = process.env.CRON_SECRET || ""
-    // if (cronSecret && authHeader !== `****** {
-    //   const userAgent = request.headers.get("user-agent") || ""
-    //   if (!userAgent.includes("vercel")) {
-    //     console.warn("⚠️ Unauthorized sync request")
-    //     return NextResponse.json(
-    //       { error: "Unauthorized" },
-    //       { status: 401 }
-    //     )
-    //   }
-    // }
+    // Verify authorization token if CRON_SECRET is configured
+    const cronSecret = process.env.CRON_SECRET
+    if (cronSecret) {
+      const authHeader = request.headers.get("authorization") || ""
+      const bearerToken = authHeader.replace("Bearer ", "")
+      if (bearerToken !== cronSecret) {
+        console.warn("⚠️ Unauthorized POST request to /api/gold-price/sync")
+        return NextResponse.json(
+          { error: "Unauthorized" },
+          { status: 401 }
+        )
+      }
+    }
 
     console.log("🔄 Syncing gold price (15-minute interval)...")
     const startTime = Date.now()
@@ -92,6 +89,7 @@ export async function POST(request: Request) {
 /**
  * GET /api/gold-price/sync
  * Health check endpoint to verify sync capability
+ * No authentication required
  */
 export async function GET() {
   try {

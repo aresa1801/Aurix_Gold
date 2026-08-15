@@ -103,7 +103,7 @@ Health check for cache status and next sync time.
     "lastUpdated": "2024-08-15T02:49:00.000Z",
     "source": "GoldAPI.io (Real-time)"
   },
-  "cacheAge": "120s",
+  "cacheAgeSecs": 120,
   "nextSyncTime": "2024-08-15T03:04:00.000Z"
 }
 ```
@@ -158,8 +158,10 @@ Required in `.env.local` or `.env.production`:
 ```env
 NEXT_PUBLIC_GOLD_API_KEY=your_goldapi_key
 NEXT_PUBLIC_METALS_DEV_API_KEY=your_metals_dev_key
-CRON_SECRET=your_optional_secret_key
+CRON_SECRET=your_secret_for_sync_endpoint_protection
 ```
+
+**Note**: Set `CRON_SECRET` to protect the sync endpoints from unauthorized access. Vercel Cron will include this in the Authorization header. Clients must provide the same secret to manually trigger sync.
 
 ### Vercel Deployment
 
@@ -275,8 +277,18 @@ npm run dev
 
 ## API Limits
 
+⚠️ **IMPORTANT**: With 15-minute interval syncing:
 - **GoldAPI.io**: 100 requests/day (free tier)
-- **Metals.dev**: 100 requests/month (free tier)
-- **Our sync**: ~2,880 requests/month (1 every 15 minutes × 24 hours × 30 days)
+  - 15-min interval = 96 requests/day for sync alone
+  - Only 4 requests/day remaining for other usage
+  - Consider longer intervals (30-60 minutes) or upgrading plan for production
 
-Staying well within limits due to 15-minute interval and server-side caching.
+- **Metals.dev**: 100 requests/month (free tier fallback)
+  - Currently has capacity
+
+### Optimization Options
+If quota becomes insufficient:
+1. **Increase sync interval**: Change from 15 min to 30-60 min in `vercel.json`
+2. **Upgrade API plan**: GoldAPI.io offers paid tiers with higher limits
+3. **Use secondary source only**: Disable GoldAPI.io, rely on Metals.dev (slower updates)
+4. **Client-side caching**: Increase browser cache duration to reduce overall requests
