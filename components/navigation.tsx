@@ -5,7 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Menu, Home, Briefcase, ArrowLeftRight, Lock, Send, User, Settings, X } from "lucide-react"
+import { Menu, Briefcase, ArrowLeftRight, Lock, Send, User, Settings, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { WalletConnect } from "./wallet-connect"
 import { LanguageToggle } from "./language-toggle"
@@ -59,7 +59,6 @@ export function Navigation() {
   }, [])
 
   const navigation = [
-    { name: t("nav.home"), href: "/", icon: Home },
     { name: t("nav.vault"), href: "/vault", icon: Briefcase },
     { name: t("nav.swap"), href: "/swap", icon: ArrowLeftRight },
     { name: t("nav.staking"), href: "/staking", icon: Lock },
@@ -93,7 +92,7 @@ export function Navigation() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-0.5">
+          <div className="hidden lg:flex items-center space-x-1">
             {navigation.map((item) => {
               if (!item.icon) return null
               const Icon = item.icon
@@ -103,7 +102,7 @@ export function Navigation() {
                   key={item.name}
                   href={item.href}
                   className={cn(
-                    "flex items-center space-x-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                    "flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                     isActive
                       ? "bg-gold/10 text-gold"
                       : "text-soft-white/50 hover:text-soft-white hover:bg-soft-white/5",
