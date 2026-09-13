@@ -5,10 +5,16 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Menu, Briefcase, ArrowLeftRight, Lock, Send, User, RefreshCw, Settings, ShieldCheck, Eye, Building2, Vote } from "lucide-react"
+import { Menu, Briefcase, ArrowLeftRight, Lock, Send, User, RefreshCw, Settings, ShieldCheck, Eye, Building2, Vote, MoreHorizontal } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { WalletConnect } from "./wallet-connect"
 import { LanguageToggle } from "./language-toggle"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { useLanguage } from "@/contexts/language-context"
 import { ADMIN_ADDRESS } from "@/services/contracts"
 
@@ -63,18 +69,24 @@ export function Navigation() {
     }
   }, [])
 
-  const navigation = [
+  const mainNavigation = [
+    { name: "Dashboard", href: "/portfolio", icon: Briefcase },
+    { name: "Buy / Sell", href: "/swap", icon: ArrowLeftRight },
+    { name: "Portfolio", href: "/portfolio", icon: User },
+    { name: "Earn", href: "/staking", icon: Lock },
+  ]
+
+  const moreNavigation = [
     { name: t("nav.vault"), href: "/vault", icon: Briefcase },
-    { name: t("nav.swap"), href: "/swap", icon: ArrowLeftRight },
-    { name: t("nav.staking"), href: "/staking", icon: Lock },
     { name: t("nav.redemption"), href: "/redemption", icon: Send },
-    { name: t("nav.portfolio"), href: "/portfolio", icon: User },
     { name: "KYC Center", href: "/kyc", icon: ShieldCheck },
     { name: "Transparency", href: "/transparency", icon: Eye },
     { name: "Institutional", href: "/institutional", icon: Building2 },
     { name: "Governance", href: "/governance", icon: Vote },
     ...(isAdmin ? [{ name: "Admin", href: "/admin", icon: Settings }] : []),
   ]
+
+  const allNavigation = [...mainNavigation, ...moreNavigation]
 
   const handleRefresh = async () => {
     setIsRefreshing(true)
@@ -108,19 +120,18 @@ export function Navigation() {
             </Link>
 
             {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center space-x-1">
-              {navigation.map((item) => {
-                if (!item.icon) return null
+            <div className="hidden lg:flex items-center gap-1">
+              {mainNavigation.map((item) => {
                 const Icon = item.icon
                 return (
                   <Link
                     key={item.name}
                     href={item.href}
                     className={cn(
-                      "flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                      "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                       pathname === item.href
                         ? "bg-gold/20 text-gold"
-                        : "text-soft-white/70 hover:text-gold hover:bg-gold/10",
+                        : "text-soft-white/70 hover:bg-gold/10 hover:text-gold",
                     )}
                   >
                     <Icon className="h-4 w-4" />
@@ -128,6 +139,34 @@ export function Navigation() {
                   </Link>
                 )
               })}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={cn(
+                      "gap-2 rounded-lg text-sm font-medium text-soft-white/70 hover:bg-gold/10 hover:text-gold",
+                      moreNavigation.some((item) => pathname === item.href) && "bg-gold/20 text-gold",
+                    )}
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                    More
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="border-gold/20 bg-navy-900">
+                  {moreNavigation.map((item) => {
+                    const Icon = item.icon
+                    return (
+                      <DropdownMenuItem key={item.name} asChild>
+                        <Link href={item.href} className="flex cursor-pointer items-center gap-2 text-soft-white/80 focus:bg-gold/10 focus:text-gold">
+                          <Icon className="h-4 w-4" />
+                          {item.name}
+                        </Link>
+                      </DropdownMenuItem>
+                    )
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
 
             <div className="flex items-center space-x-3">
@@ -146,7 +185,7 @@ export function Navigation() {
                 </SheetTrigger>
                 <SheetContent side="right" className="bg-navy-900 border-gold/20">
                   <div className="flex flex-col space-y-4 mt-8">
-                    {navigation.map((item) => {
+                    {allNavigation.map((item) => {
                       if (!item.icon) return null
                       const Icon = item.icon
                       return (
