@@ -155,6 +155,8 @@ export function WalletConnect() {
           })
 
           if (accounts.length > 0) {
+            await contractService.connectSigner()
+
             setWallet((prev) => ({
               ...prev,
               isConnected: true,

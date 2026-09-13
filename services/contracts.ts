@@ -521,12 +521,23 @@ export class ContractService {
   async initialize() {
     if (typeof window !== "undefined" && (window as any).ethereum) {
       this.provider = new ethers.BrowserProvider((window as any).ethereum)
-      try {
-        this.signer = await this.provider.getSigner()
-      } catch (error) {
-        console.warn("Failed to get signer:", error)
-      }
+      // Do not call getSigner here. In ethers, getSigner can request wallet
+      // access, which must only happen after an explicit user action.
+      this.signer = null
     }
+  }
+
+  async connectSigner() {
+    if (!this.provider) {
+      await this.initialize()
+    }
+
+    if (!this.provider) {
+      throw new Error("Wallet provider not available")
+    }
+
+    this.signer = await this.provider.getSigner()
+    return this.signer
   }
 
   // Get contract instance
