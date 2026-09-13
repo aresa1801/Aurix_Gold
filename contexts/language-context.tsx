@@ -284,6 +284,18 @@ const translations = {
     "swap.swapFailed": "Swap Failed",
     "swap.failedCheck": "The transaction failed. Check your balance and try again.",
     "swap.demo1M": "Demo: 1M IDRT",
+
+    // Pegadaian Outlet Translations
+    "outlet.jakarta.pusat": "Pegadaian Central Jakarta",
+    "outlet.jakarta.pusat.address": "Jl. Medan Merdeka Barat No. 1",
+    "outlet.thamrin": "Pegadaian Thamrin",
+    "outlet.thamrin.address": "Jl. MH Thamrin No. 15",
+    "outlet.sudirman": "Pegadaian Sudirman",
+    "outlet.sudirman.address": "Jl. Jend. Sudirman Kav. 25",
+    "outlet.surabaya": "Pegadaian Surabaya Central",
+    "outlet.surabaya.address": "Jl. Pemuda No. 12",
+    "outlet.bandung": "Pegadaian Bandung Asia Afrika",
+    "outlet.bandung.address": "Jl. Asia Afrika No. 65",
   },
   id: {
     // Navigation
