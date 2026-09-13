@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -82,6 +82,24 @@ export function WalletConnect() {
   const [showNetworkDialog, setShowNetworkDialog] = useState(false)
   const [isClaimingFaucet, setIsClaimingFaucet] = useState(false)
 
+  useEffect(() => {
+    const ethereum = typeof window !== "undefined" ? (window as any).ethereum : undefined
+    if (!ethereum?.on) return
+
+    const handleAccountsChanged = (accounts: string[]) => {
+      if (!accounts?.[0]) disconnectWallet()
+      else setWallet((prev) => ({ ...prev, address: accounts[0] }))
+    }
+    const handleChainChanged = () => window.location.reload()
+
+    ethereum.on("accountsChanged", handleAccountsChanged)
+    ethereum.on("chainChanged", handleChainChanged)
+    return () => {
+      ethereum.removeListener?.("accountsChanged", handleAccountsChanged)
+      ethereum.removeListener?.("chainChanged", handleChainChanged)
+    }
+  }, [])
+
   // Load wallet data after connection
   const loadWalletData = async (address: string) => {
     try {
@@ -141,74 +159,39 @@ export function WalletConnect() {
     }
   }
 
-  // Enhanced wallet connection function
   const connectWallet = async () => {
+    if (wallet.isConnecting) return
     setWallet((prev) => ({ ...prev, isConnecting: true }))
 
     try {
-      // Check if MetaMask or other wallet is available
-      if (typeof window !== "undefined" && (window as any).ethereum) {
-        try {
-          // Request account access
-          const accounts = await (window as any).ethereum.request({
-            method: "eth_requestAccounts",
-          })
-
-          if (accounts.length > 0) {
-            await contractService.connectSigner(accounts[0])
-
-            setWallet((prev) => ({
-              ...prev,
-              isConnected: true,
-              address: accounts[0],
-              network: networks[0], // Default to BSC
-              isConnecting: false,
-            }))
-
-            // Load contract data (with fallback to demo)
-            await loadWalletData(accounts[0])
-
-            toast({
-              title: t("wallet.connected"),
-              description: `${t("wallet.connectedDesc")} ${accounts[0].slice(0, 6)}...${accounts[0].slice(-4)}`,
-            })
-          }
-        } catch (error) {
-          console.error("MetaMask connection failed:", error)
-          throw error
-        }
-      } else {
-        // Fallback for demo purposes when MetaMask not available
-        console.log("📱 MetaMask not detected, using demo mode")
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-
-        const demoAddress = "0x742d35Cc6634C0532925a3b8D4C2C4e0C8b4C8b4"
-        setWallet({
-          isConnected: true,
-          address: demoAddress,
-          balance: "2.5847",
-          idrtBalance: "50000000",
-          goldTokenBalance: "125.500000",
-          network: networks[0],
-          isConnecting: false,
-          canClaimFaucet: true,
-          nextClaimTime: 0,
-        })
-
-        toast({
-          title: t("wallet.connected"),
-          description: `${t("wallet.connectedDesc")} Demo Mode`,
-        })
+      const ethereum = typeof window !== "undefined" ? (window as any).ethereum : undefined
+      if (!ethereum?.request) {
+        throw new Error("MetaMask is not installed. Install MetaMask and try again.")
       }
-    } catch (error) {
-      console.error("Failed to connect wallet:", error)
-      setWallet((prev) => ({ ...prev, isConnecting: false }))
+
+      const accounts = (await ethereum.request({ method: "eth_requestAccounts" })) as string[]
+      const address = accounts?.[0]
+      if (!address) throw new Error("No wallet account was selected.")
+
+      const chainId = await ethereum.request({ method: "eth_chainId" })
+      const network = networks.find((item) => item.chainId.toLowerCase() === String(chainId).toLowerCase()) ?? networks[0]
+
+      await contractService.connectSigner(address)
+      setWallet((prev) => ({ ...prev, isConnected: true, address, network, isConnecting: false }))
+      await loadWalletData(address)
 
       toast({
-        title: t("wallet.connectionFailed"),
-        description: t("wallet.connectionFailedDesc"),
-        variant: "destructive",
+        title: t("wallet.connected"),
+        description: `${t("wallet.connectedDesc")} ${address.slice(0, 6)}...${address.slice(-4)}`,
       })
+    } catch (error: any) {
+      const code = error?.code
+      const message = code === 4001
+        ? "Connection request was rejected in MetaMask. Approve the request to continue."
+        : error?.message || t("wallet.connectionFailedDesc")
+      console.error("Failed to connect wallet:", error)
+      setWallet((prev) => ({ ...prev, isConnecting: false }))
+      toast({ title: t("wallet.connectionFailed"), description: message, variant: "destructive" })
     }
   }
 

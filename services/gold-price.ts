@@ -20,6 +20,8 @@ export class GoldPriceService {
   private static readonly ANTAM_SCRAPER_API = "https://api.antam-gold.com/current-price"
   private static readonly GOLD_PRICE_ORG_API = "https://api.goldprice.org/api/gold-price-indonesia"
   private static readonly METALS_LIVE_API = "https://api.metals.live/v1/spot/gold"
+  private static readonly METALS_DEV_API = "https://api.metals.dev/v1/latest"
+  private static readonly GOLD_API = "https://www.goldapi.io/api/XAU/USD"
 
   private static readonly METALS_PRICES_API = "https://api.metalprices.com/v1/latest/gold"
   private static readonly BULLIONBYPOST_API = "https://api.bullionbypost.com/api/price/gold"
@@ -176,6 +178,70 @@ export class GoldPriceService {
     }
   }
 
+  private static async fetchFromGoldApi(): Promise<GoldPriceData | null> {
+    const apiKey = process.env.NEXT_PUBLIC_GOLD_API_KEY
+    if (!apiKey) return null
+
+    try {
+      const response = await this.fetchWithTimeout(this.GOLD_API, 8000, {
+        "x-access-token": apiKey,
+      })
+      if (!response?.ok) throw new Error(`GoldAPI HTTP ${response?.status}`)
+      const data = await response.json()
+      const usdPerOunce = Number(data?.price)
+      if (!Number.isFinite(usdPerOunce) || usdPerOunce <= 0) throw new Error("Invalid GoldAPI quote")
+      const exchangeRate = await this.getUSDToIDRRate()
+      const originalBuyPrice = Math.round((usdPerOunce / 31.1034768) * exchangeRate)
+      const originalSellPrice = Math.round(originalBuyPrice * 0.98)
+      return {
+        buyPrice: originalBuyPrice,
+        sellPrice: originalSellPrice,
+        originalBuyPrice,
+        originalSellPrice,
+        currency: "IDR",
+        lastUpdated: new Date().toISOString(),
+        changePercent24h: Number(data?.ch ?? 0),
+        source: "GoldAPI real-time spot",
+      }
+    } catch (error) {
+      console.warn("GoldAPI fetch failed:", error)
+      return null
+    }
+  }
+
+  private static async fetchFromMetalsDev(): Promise<GoldPriceData | null> {
+    const apiKey = process.env.NEXT_PUBLIC_METALS_DEV_API_KEY
+    if (!apiKey) return null
+
+    try {
+      const response = await this.fetchWithTimeout(
+        `${this.METALS_DEV_API}?api_key=${encodeURIComponent(apiKey)}&currency=USD&unit=toz`,
+        8000,
+      )
+      if (!response?.ok) throw new Error(`Metals.dev HTTP ${response?.status}`)
+      const data = await response.json()
+      const usdPerTroyOunce = Number(data?.metals?.gold ?? data?.gold?.price ?? data?.gold)
+      if (!Number.isFinite(usdPerTroyOunce) || usdPerTroyOunce <= 0) throw new Error("Invalid gold quote")
+
+      const exchangeRate = await this.getUSDToIDRRate()
+      const originalBuyPrice = Math.round((usdPerTroyOunce / 31.1034768) * exchangeRate)
+      const originalSellPrice = Math.round(originalBuyPrice * 0.98)
+      return {
+        buyPrice: originalBuyPrice,
+        sellPrice: originalSellPrice,
+        originalBuyPrice,
+        originalSellPrice,
+        currency: "IDR",
+        lastUpdated: new Date().toISOString(),
+        changePercent24h: Number(data?.metals?.gold_change_percent ?? data?.gold?.change_percent ?? 0),
+        source: "Metals.dev real-time spot",
+      }
+    } catch (error) {
+      console.warn("Metals.dev fetch failed:", error)
+      return null
+    }
+  }
+
   /**
    * Enhanced fetchGoldPrice with priority-based API selection
    */
@@ -188,6 +254,22 @@ export class GoldPriceService {
 
     try {
       console.log("🌐 Fetching real-time gold price from premium sources...")
+
+      const goldApiData = await this.fetchFromGoldApi()
+      if (goldApiData && this.validateOriginalPriceData(goldApiData)) {
+        const adjustedData = this.applyGTokenPricing(goldApiData)
+        this.cache = { data: adjustedData, timestamp: now }
+        console.log("✅ Using GoldAPI real-time price")
+        return adjustedData
+      }
+
+      const metalsDevData = await this.fetchFromMetalsDev()
+      if (metalsDevData && this.validateOriginalPriceData(metalsDevData)) {
+        const adjustedData = this.applyGTokenPricing(metalsDevData)
+        this.cache = { data: adjustedData, timestamp: now }
+        console.log("✅ Using Metals.dev real-time price")
+        return adjustedData
+      }
 
       const metalsLiveData = await this.fetchFromMetalsLive()
       if (metalsLiveData && this.validateOriginalPriceData(metalsLiveData)) {
@@ -258,7 +340,11 @@ export class GoldPriceService {
   /**
    * Helper untuk fetch dengan timeout
    */
-  private static async fetchWithTimeout(url: string, timeoutMs: number): Promise<Response | null> {
+  private static async fetchWithTimeout(
+    url: string,
+    timeoutMs: number,
+    extraHeaders: Record<string, string> = {},
+  ): Promise<Response | null> {
     try {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
@@ -269,6 +355,7 @@ export class GoldPriceService {
           "Content-Type": "application/json",
           Accept: "application/json",
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          ...extraHeaders,
         },
         cache: "no-cache",
         signal: controller.signal,
