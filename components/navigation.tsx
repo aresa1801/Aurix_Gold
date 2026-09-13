@@ -5,7 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Menu, Home, Briefcase, ArrowLeftRight, Lock, Send, User, RefreshCw, Settings } from "lucide-react"
+import { Menu, Briefcase, ArrowLeftRight, Lock, Send, User, RefreshCw, Settings } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { WalletConnect } from "./wallet-connect"
 import { LanguageToggle } from "./language-toggle"
@@ -64,7 +64,6 @@ export function Navigation() {
   }, [])
 
   const navigation = [
-    { name: t("nav.home"), href: "/", icon: Home },
     { name: t("nav.vault"), href: "/vault", icon: Briefcase },
     { name: t("nav.swap"), href: "/swap", icon: ArrowLeftRight },
     { name: t("nav.staking"), href: "/staking", icon: Lock },
@@ -92,19 +91,16 @@ export function Navigation() {
             <Link href="/" className="flex items-center space-x-3">
               {/* Circular Logo */}
               <div className="relative">
-                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-gold via-gold-600 to-gold-700 p-0.5">
+                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-gold via-gold-600 to-gold-700 p-0.5">
                   <div className="h-full w-full rounded-full bg-navy-900 flex items-center justify-center">
-                    <img src="/images/aurix-logo.jpg" alt="Aurix Logo" className="h-5 w-5 rounded-full object-cover" />
+                    <img src="/images/aurix-logo.jpg" alt="Aurix Logo" className="h-8 w-8 rounded-full object-cover" />
                   </div>
                 </div>
                 <div className="absolute inset-0 rounded-full bg-gold/20 animate-pulse"></div>
               </div>
 
               {/* Brand Text */}
-              <div className="flex flex-col">
-                <span className="text-base font-bold text-gold leading-tight">Aurix</span>
-                <span className="text-xs text-soft-white/70 leading-tight">Finance</span>
-              </div>
+              <span className="text-xl font-bold tracking-tight text-gold">AuriX Finance</span>
             </Link>
 
             {/* Desktop Navigation */}
