@@ -77,30 +77,13 @@ function MetricCard({ title, value, detail, change, icon: Icon, accent = false }
 }
 
 export default function PortfolioPage() {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [range, setRange] = useState("7d")
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="flex min-h-screen">
-        <aside className={cn("fixed inset-y-0 left-0 z-50 flex w-64 -translate-x-full flex-col border-r border-border/70 bg-card/95 p-5 backdrop-blur-xl transition-transform lg:static lg:translate-x-0", sidebarOpen && "translate-x-0")}>
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-3">
-              <div className="flex size-10 items-center justify-center rounded-xl bg-primary/15 ring-1 ring-primary/40"><Coins className="size-5 text-primary" /></div>
-              <div><p className="text-sm font-semibold tracking-[0.18em] text-primary">AURIX</p><p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Finance</p></div>
-            </Link>
-            <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setSidebarOpen(false)} aria-label="Close menu"><X /></Button>
-          </div>
-          <div className="mt-10 flex flex-1 flex-col gap-1">
-            <p className="mb-3 px-3 text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">Workspace</p>
-            {navItems.map((item) => { const Icon = item.icon; return <Link key={item.label} href={item.href} className={cn("flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground", item.label === "Dashboard" && "bg-primary/10 font-medium text-primary")}><Icon className="size-4" />{item.label}</Link> })}
-          </div>
-          <div className="rounded-2xl border border-primary/20 bg-primary/[0.06] p-4"><div className="flex items-center gap-2 text-xs font-medium text-primary"><ShieldCheck className="size-4" />Reserves verified</div><p className="mt-2 text-xs leading-5 text-muted-foreground">Gold reserves are independently attested and visible on-chain.</p><Link href="#proof-of-reserves" className="mt-3 inline-flex text-xs font-medium text-foreground hover:text-primary">View proof of reserves <ArrowUpRight className="ml-1 size-3" /></Link></div>
-        </aside>
-
-        <main className="min-w-0 flex-1">
+      <main className="min-w-0 flex-1">
           <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-border/70 bg-background/85 px-5 backdrop-blur-xl lg:px-8">
-            <div className="flex items-center gap-3"><Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setSidebarOpen(true)} aria-label="Open menu"><Menu /></Button><div><p className="text-xs text-muted-foreground">Good morning</p><h1 className="text-lg font-semibold tracking-tight">Portfolio dashboard</h1></div></div>
+            <div><p className="text-xs text-muted-foreground">Good morning</p><h1 className="text-lg font-semibold tracking-tight">Portfolio dashboard</h1></div>
             <div className="flex items-center gap-2 sm:gap-3"><div className="hidden items-center gap-2 rounded-xl border border-border/70 bg-card/60 px-3 py-2 text-xs text-muted-foreground sm:flex"><CircleDollarSign className="size-4 text-primary" />G-Token <span className="font-medium text-foreground">Rp 1,245,000</span></div><Badge variant="outline" className="hidden border-primary/30 bg-primary/10 text-primary sm:inline-flex"><span className="mr-1.5 size-1.5 rounded-full bg-primary" />PoR verified</Badge><Button variant="outline" className="gap-2 border-border/70 bg-card/60 text-xs"><span className="hidden sm:inline">Arbitrum</span><ChevronDown className="size-3" /></Button><Button variant="outline" className="gap-2 border-border/70 bg-card/60 font-mono text-xs">0x1234...5678<ChevronDown className="size-3" /></Button></div>
           </header>
 
@@ -118,7 +101,6 @@ export default function PortfolioPage() {
             <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]"><Card className="border-border/60 bg-card/70"><CardHeader className="flex flex-row items-center justify-between"><div><CardTitle>Recent activity</CardTitle><CardDescription>Your latest portfolio movements</CardDescription></div><Button variant="ghost" className="text-xs text-primary">View all <ArrowUpRight className="ml-1 size-3.5" /></Button></CardHeader><CardContent><div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Type</TableHead><TableHead>Amount</TableHead><TableHead>Price</TableHead><TableHead>Status</TableHead><TableHead>Tx hash</TableHead></TableRow></TableHeader><TableBody>{activity.map((item) => <TableRow key={item.hash}><TableCell className="whitespace-nowrap text-xs text-muted-foreground">{item.date}</TableCell><TableCell className="whitespace-nowrap text-sm font-medium">{item.type}</TableCell><TableCell className="whitespace-nowrap text-sm">{item.amount}</TableCell><TableCell className="whitespace-nowrap text-xs text-muted-foreground">{item.price}</TableCell><TableCell><Badge variant="outline" className={cn("border-primary/25 bg-primary/10 text-primary", item.status === "Pending" && "border-amber-400/25 bg-amber-400/10 text-amber-300")}>{item.status}</Badge></TableCell><TableCell className="font-mono text-xs text-muted-foreground">{item.hash}</TableCell></TableRow>)}</TableBody></Table></div></CardContent></Card><Card className="border-border/60 bg-card/70"><CardHeader><CardTitle>Quick actions</CardTitle><CardDescription>Move assets in a few clicks.</CardDescription></CardHeader><CardContent className="grid grid-cols-2 gap-3"><Button asChild className="h-20 flex-col gap-2 bg-primary text-primary-foreground hover:bg-primary/90"><Link href="/swap"><ShoppingCart className="size-5" />Buy</Link></Button><Button asChild variant="outline" className="h-20 flex-col gap-2 border-border/70 bg-transparent"><Link href="/swap"><ArrowUpRight className="size-5" />Sell</Link></Button><Button asChild variant="outline" className="h-20 flex-col gap-2 border-border/70 bg-transparent"><Link href="/redemption"><ArrowDownToLine className="size-5" />Redeem</Link></Button><Button asChild variant="outline" className="h-20 flex-col gap-2 border-border/70 bg-transparent"><Link href="/staking"><LockKeyhole className="size-5" />Stake</Link></Button></CardContent></Card></div>
           </div>
         </main>
-      </div>
     </div>
   )
 }

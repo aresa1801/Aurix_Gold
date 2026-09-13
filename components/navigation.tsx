@@ -71,14 +71,13 @@ export function Navigation() {
 
   const mainNavigation = [
     { name: "Dashboard", href: "/portfolio", icon: Briefcase },
-    { name: "Buy / Sell", href: "/swap", icon: ArrowLeftRight },
-    { name: "Portfolio", href: "/portfolio", icon: User },
+    { name: "Buy/Sell", href: "/swap", icon: ArrowLeftRight },
     { name: "Earn", href: "/staking", icon: Lock },
+    { name: t("nav.redemption"), href: "/redemption", icon: Send },
+    { name: t("nav.vault"), href: "/vault", icon: Briefcase },
   ]
 
   const moreNavigation = [
-    { name: t("nav.vault"), href: "/vault", icon: Briefcase },
-    { name: t("nav.redemption"), href: "/redemption", icon: Send },
     { name: "KYC Center", href: "/kyc", icon: ShieldCheck },
     { name: "Transparency", href: "/transparency", icon: Eye },
     { name: "Institutional", href: "/institutional", icon: Building2 },
