@@ -53,11 +53,12 @@ interface TransactionHistory {
 
 export default function PortfolioPage() {
   const { t } = useLanguage()
-  const [connectedAddress, setConnectedAddress] = useState<string | null>(null)
+  const DEMO_ADDRESS = "0x0000000000000000000000000000000000000001"
+  const [connectedAddress, setConnectedAddress] = useState<string | null>(DEMO_ADDRESS)
   const [balances, setBalances] = useState<SynchronizedBalances>({
-    idrtBalance: "0",
-    goldTokenBalance: "0",
-    bnbBalance: "0",
+    idrtBalance: "50000000",
+    goldTokenBalance: "125.500000",
+    bnbBalance: "2.5847",
     faucetStatus: {
       canClaim: false,
       nextClaimTime: 0,
@@ -70,16 +71,17 @@ export default function PortfolioPage() {
     lastSyncTime: 0
   })
   const [portfolioMetrics, setPortfolioMetrics] = useState<PortfolioMetrics>({
-    totalValueUSD: "0",
-    totalValueIDR: "0",
+    totalValueUSD: "15544.58",
+    totalValueIDR: "233168750",
     portfolioChange24h: "+0.00%",
-    idrtPercentage: 0,
-    goldTokenPercentage: 0,
-    bnbPercentage: 0
+    idrtPercentage: 21.44,
+    goldTokenPercentage: 58.42,
+    bnbPercentage: 20.14
   })
   const [transactionHistory, setTransactionHistory] = useState<TransactionHistory[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isSyncing, setIsSyncing] = useState(false)
+  const [dataSource, setDataSource] = useState<"mock" | "smart-contract">("mock")
   const [error, setError] = useState<string | null>(null)
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null)
   const [syncProgress, setSyncProgress] = useState(0)
@@ -125,8 +127,8 @@ export default function PortfolioPage() {
     const goldTokenPercentage = totalValueIDR > 0 ? (goldValue / totalValueIDR) * 100 : 0
     const bnbPercentage = totalValueIDR > 0 ? (bnbValue / totalValueIDR) * 100 : 0
 
-    // Simulate 24h change (in real app, this would come from historical data)
-    const change24h = (Math.random() - 0.5) * 10 // Random change between -5% to +5%
+    // Keep the demo snapshot stable until historical contract data is available.
+    const change24h = 0
 
     return {
       totalValueUSD: totalValueUSD.toFixed(2),
@@ -153,11 +155,12 @@ export default function PortfolioPage() {
       if (showProgress) setSyncProgress(20)
 
       // Sync all balances using the enhanced contract service
-      const syncedBalances = await contractService.syncWalletBalances(address)
+      const syncedBalances = await contractService.getPortfolioSnapshot(address)
       if (showProgress) setSyncProgress(80)
 
       // Update state with synchronized data
       setBalances(syncedBalances)
+      setDataSource("smart-contract")
       setLastSyncTime(new Date())
       
       // Calculate portfolio metrics
@@ -340,27 +343,18 @@ export default function PortfolioPage() {
     }
   }
 
-  // Initialize on component mount
+  // Render the stable demo snapshot immediately. Blockchain reads begin only
+  // after the user explicitly connects or requests a sync.
   useEffect(() => {
-    const init = async () => {
-      setIsLoading(true)
-      const address = await checkWalletConnection()
-      if (address) {
-        setConnectedAddress(address)
-        setupEventListeners(address)
-        await syncWalletBalances(address)
-        await loadTransactionHistory(address)
-      }
-      setIsLoading(false)
-    }
-    
-    init()
+    const addressPromise = checkWalletConnection()
+    addressPromise.then((address) => {
+      if (address) setConnectedAddress(address)
+    })
 
-    // Cleanup event listeners on unmount
     return () => {
       contractService.cleanup()
     }
-  }, [setupEventListeners, syncWalletBalances]) // Add syncWalletBalances to dependencies
+  }, [])
 
   // Listen for account changes
   useEffect(() => {
@@ -491,9 +485,12 @@ export default function PortfolioPage() {
             <div>
               <h1 className="text-4xl font-bold text-soft-white mb-2">Portfolio Dashboard</h1>
               <div className="flex items-center space-x-4">
-                <p className="text-soft-white/70">
-                  Connected: {connectedAddress?.slice(0, 6)}...{connectedAddress?.slice(-4)}
-                </p>
+                <div className="flex flex-wrap items-center gap-3 text-sm text-soft-white/70">
+                  <p>Connected: {connectedAddress?.slice(0, 6)}...{connectedAddress?.slice(-4)}</p>
+                  <Badge className={dataSource === "mock" ? "border-gold/30 bg-gold/10 text-gold" : "border-prosperity/30 bg-prosperity/10 text-prosperity"}>
+                    {dataSource === "mock" ? "Demo data" : "Smart contract data"}
+                  </Badge>
+                </div>
                 {lastSyncTime && (
                   <div className="flex items-center text-sm text-prosperity">
                     <Database className="h-4 w-4 mr-1" />

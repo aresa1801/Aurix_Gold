@@ -579,6 +579,12 @@ export class ContractService {
     return new ethers.Contract(address, abi, this.provider)
   }
 
+  // Read-only snapshot used by portfolio integrations and refresh flows.
+  async getPortfolioSnapshot(userAddress: string) {
+    await this.initialize()
+    return this.syncWalletBalances(userAddress)
+  }
+
   // Enhanced balance synchronization
   async syncWalletBalances(userAddress: string) {
     try {
