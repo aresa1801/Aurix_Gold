@@ -1,1005 +1,123 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import Link from "next/link"
+import { useState } from "react"
+import {
+  Activity,
+  ArrowDownToLine,
+  ArrowUpRight,
+  BarChart3,
+  ChevronDown,
+  CircleDollarSign,
+  Coins,
+  ExternalLink,
+  LayoutDashboard,
+  LockKeyhole,
+  Menu,
+  RefreshCw,
+  Settings,
+  ShieldCheck,
+  ShoppingCart,
+  Sparkles,
+  TrendingUp,
+  Wallet,
+  X,
+} from "lucide-react"
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Progress } from "@/components/ui/progress"
-import { Wallet, TrendingUp, Coins, ArrowUpDown, RefreshCw, DollarSign, Droplets, AlertTriangle, CheckCircle, PieChart, BarChart3, Activity, Clock, Zap, Database } from 'lucide-react'
-import { contractService, requestWalletAccounts } from "@/services/contracts"
-import { useLanguage } from "@/contexts/language-context"
-import FaucetStatus from "@/components/faucet-status"
-import { toast } from "@/hooks/use-toast"
-import { useGoldPrice } from "@/hooks/use-gold-price" // Import useGoldPrice
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { cn } from "@/lib/utils"
 
-interface SynchronizedBalances {
-  idrtBalance: string
-  goldTokenBalance: string
-  bnbBalance: string
-  faucetStatus: {
-    canClaim: boolean
-    nextClaimTime: number
-    lastClaimTime: number
-    claimAmount: string
-    availableBalance: string
-    isPaused: boolean
-    cooldownPeriod: number
-  }
-  lastSyncTime: number
-}
+const chartData = [
+  { date: "Sep 07", value: 14820000 },
+  { date: "Sep 09", value: 14910000 },
+  { date: "Sep 11", value: 15040000 },
+  { date: "Sep 13", value: 15180000 },
+  { date: "Sep 15", value: 15120000 },
+  { date: "Sep 17", value: 15498750 },
+]
 
-interface PortfolioMetrics {
-  totalValueUSD: string
-  totalValueIDR: string
-  portfolioChange24h: string
-  idrtPercentage: number
-  goldTokenPercentage: number
-  bnbPercentage: number
-}
+const activity = [
+  { date: "17 Sep 2026, 09:42", type: "Staking reward", amount: "+42.50 USDC", price: "—", status: "Completed", hash: "0x7a2f...b91c" },
+  { date: "16 Sep 2026, 15:08", type: "Buy G-TOKEN", amount: "+1,250 G-TOKEN", price: "Rp 1,245,000", status: "Completed", hash: "0x4c11...f21a" },
+  { date: "12 Sep 2026, 11:26", type: "Stake", amount: "5,000 G-TOKEN", price: "Rp 1,242,500", status: "Completed", hash: "0x91d0...33e8" },
+  { date: "08 Sep 2026, 18:54", type: "Redeem", amount: "250 G-TOKEN", price: "Rp 1,238,000", status: "Pending", hash: "0x2d64...0ac4" },
+]
 
-interface TransactionHistory {
-  id: string
-  type: "claim" | "swap" | "stake" | "redeem" | "transfer"
-  amount: string
-  token: string
-  timestamp: number
-  status: "completed" | "pending" | "failed"
-  hash?: string
-  fromAddress?: string
-  toAddress?: string
+const navItems = [
+  { label: "Dashboard", href: "/portfolio", icon: LayoutDashboard },
+  { label: "Buy / Sell", href: "/swap", icon: ShoppingCart },
+  { label: "Redeem", href: "/redemption", icon: ArrowDownToLine },
+  { label: "Stake", href: "/staking", icon: LockKeyhole },
+  { label: "KYC", href: "/portfolio#kyc", icon: ShieldCheck },
+  { label: "Governance", href: "/portfolio#governance", icon: Sparkles },
+  { label: "Settings", href: "/portfolio#settings", icon: Settings },
+]
+
+const formatIDR = (value: number) => `Rp ${value.toLocaleString("id-ID")}`
+
+function MetricCard({ title, value, detail, change, icon: Icon, accent = false }: { title: string; value: string; detail: string; change?: string; icon: typeof Wallet; accent?: boolean }) {
+  return (
+    <Card className={cn("border-border/60 bg-card/70", accent && "border-primary/30 bg-primary/[0.07]")}>
+      <CardContent className="flex min-h-[142px] flex-col justify-between p-5">
+        <div className="flex items-center justify-between text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+          {title}
+          <span className={cn("rounded-lg bg-muted/70 p-2", accent && "bg-primary/15 text-primary")}><Icon className="size-4" /></span>
+        </div>
+        <div>
+          <div className="mt-4 flex items-end gap-2"><p className="text-2xl font-semibold tracking-tight text-foreground">{value}</p>{change && <span className="mb-1 text-xs font-medium text-primary">{change}</span>}</div>
+          <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
+        </div>
+      </CardContent>
+    </Card>
+  )
 }
 
 export default function PortfolioPage() {
-  const { t } = useLanguage()
-  const DEMO_ADDRESS = "0x0000000000000000000000000000000000000001"
-  const [connectedAddress, setConnectedAddress] = useState<string | null>(DEMO_ADDRESS)
-  const [balances, setBalances] = useState<SynchronizedBalances>({
-    idrtBalance: "50000000",
-    goldTokenBalance: "125.500000",
-    bnbBalance: "2.5847",
-    faucetStatus: {
-      canClaim: false,
-      nextClaimTime: 0,
-      lastClaimTime: 0,
-      claimAmount: "1000000",
-      availableBalance: "0",
-      isPaused: false,
-      cooldownPeriod: 86400
-    },
-    lastSyncTime: 0
-  })
-  const [portfolioMetrics, setPortfolioMetrics] = useState<PortfolioMetrics>({
-    totalValueUSD: "15544.58",
-    totalValueIDR: "233168750",
-    portfolioChange24h: "+0.00%",
-    idrtPercentage: 21.44,
-    goldTokenPercentage: 58.42,
-    bnbPercentage: 20.14
-  })
-  const [transactionHistory, setTransactionHistory] = useState<TransactionHistory[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSyncing, setIsSyncing] = useState(false)
-  const [dataSource, setDataSource] = useState<"mock" | "smart-contract">("mock")
-  const [error, setError] = useState<string | null>(null)
-  const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null)
-  const [syncProgress, setSyncProgress] = useState(0)
-
-  // Use the gold price hook for real-time data
-  const { data: goldPriceData } = useGoldPrice({
-    autoRefresh: true,
-    refreshInterval: 30000, // 30 seconds
-  })
-
-  // Check wallet connection
-  const checkWalletConnection = async () => {
-    try {
-      if (typeof window !== "undefined" && (window as any).ethereum) {
-        const accounts = await (window as any).ethereum.request({
-          method: "eth_accounts",
-        })
-        
-        if (accounts.length > 0) {
-          return accounts[0]
-        }
-      }
-      return null
-    } catch (error) {
-      console.error("Failed to check wallet connection:", error)
-      return null
-    }
-  }
-
-  // Calculate portfolio metrics
-  const calculatePortfolioMetrics = useCallback((balanceData: SynchronizedBalances): PortfolioMetrics => {
-    const currentGoldPriceIDR = goldPriceData?.buyPrice || 1085000; // Use real gold price or fallback
-
-    const idrtValue = parseFloat(balanceData.idrtBalance)
-    const goldValue = parseFloat(balanceData.goldTokenBalance) * currentGoldPriceIDR // Use dynamic gold price
-    const bnbValue = parseFloat(balanceData.bnbBalance) * 15000000 // 1 BNB ≈ 15M IDRT
-
-    const totalValueIDR = idrtValue + goldValue + bnbValue
-    const totalValueUSD = totalValueIDR / 15000 // Rough USD conversion
-
-    // Calculate percentages
-    const idrtPercentage = totalValueIDR > 0 ? (idrtValue / totalValueIDR) * 100 : 0
-    const goldTokenPercentage = totalValueIDR > 0 ? (goldValue / totalValueIDR) * 100 : 0
-    const bnbPercentage = totalValueIDR > 0 ? (bnbValue / totalValueIDR) * 100 : 0
-
-    // Keep the demo snapshot stable until historical contract data is available.
-    const change24h = 0
-
-    return {
-      totalValueUSD: totalValueUSD.toFixed(2),
-      totalValueIDR: totalValueIDR.toFixed(0),
-      portfolioChange24h: change24h >= 0 ? `+${change24h.toFixed(2)}%` : `${change24h.toFixed(2)}%`,
-      idrtPercentage,
-      goldTokenPercentage,
-      bnbPercentage
-    }
-  }, [goldPriceData]) // Add goldPriceData to dependencies
-
-  // Synchronized balance loading with progress tracking
-  const syncWalletBalances = async (address: string, showProgress = true) => {
-    try {
-      if (showProgress) {
-        setIsSyncing(true)
-        setSyncProgress(0)
-      }
-      setError(null)
-
-      console.log("🔄 Starting wallet balance synchronization...")
-      
-      await contractService.initialize()
-      if (showProgress) setSyncProgress(20)
-
-      // Sync all balances using the enhanced contract service
-      const syncedBalances = await contractService.getPortfolioSnapshot(address)
-      if (showProgress) setSyncProgress(80)
-
-      // Update state with synchronized data
-      setBalances(syncedBalances)
-      setDataSource("smart-contract")
-      setLastSyncTime(new Date())
-      
-      // Calculate portfolio metrics
-      const metrics = calculatePortfolioMetrics(syncedBalances)
-      setPortfolioMetrics(metrics)
-      
-      if (showProgress) setSyncProgress(100)
-
-      console.log("✅ Wallet balance synchronization completed")
-      
-      toast({
-        title: "Balances Synchronized",
-        description: "All wallet balances have been updated from smart contracts",
-        position: "bottom-right" as const,
-      })
-
-    } catch (error) {
-      console.error("❌ Failed to sync wallet balances:", error)
-      setError("Failed to synchronize wallet balances")
-      
-      toast({
-        title: "Sync Failed",
-        description: "Failed to synchronize balances with smart contracts",
-        variant: "destructive",
-      })
-    } finally {
-      if (showProgress) {
-        setTimeout(() => {
-          setIsSyncing(false)
-          setSyncProgress(0)
-        }, 500)
-      }
-    }
-  }
-
-  // Handle balance updates from contract events
-  const handleBalanceUpdate = useCallback((updatedBalances: SynchronizedBalances) => {
-    console.log("📡 Received balance update from contract events")
-    setBalances(updatedBalances)
-    setLastSyncTime(new Date())
-    
-    const metrics = calculatePortfolioMetrics(updatedBalances)
-    setPortfolioMetrics(metrics)
-
-    toast({
-      title: "Balance Updated",
-      description: "Your balance has been updated automatically",
-      position: "bottom-right" as const,
-    })
-  }, [calculatePortfolioMetrics])
-
-  // Setup real-time event listeners
-  const setupEventListeners = useCallback((address: string) => {
-    try {
-      contractService.setupEventListeners(address, handleBalanceUpdate)
-      console.log("🎧 Real-time event listeners activated")
-    } catch (error) {
-      console.error("Failed to setup event listeners:", error)
-    }
-  }, [handleBalanceUpdate])
-
-  // Load transaction history (enhanced with real contract events)
-  const loadTransactionHistory = async (address: string) => {
-    try {
-      // In a real implementation, this would fetch from blockchain events
-      // For now, we'll use mock data but structure it for real integration
-      const mockTransactions: TransactionHistory[] = [
-        {
-          id: "1",
-          type: "claim",
-          amount: balances.faucetStatus.claimAmount,
-          token: "IDRT",
-          timestamp: balances.faucetStatus.lastClaimTime || Date.now() - 3600000,
-          status: "completed",
-          hash: "0x1234...5678",
-          toAddress: address
-        },
-        {
-          id: "2",
-          type: "transfer",
-          amount: "500000",
-          token: "IDRT",
-          timestamp: Date.now() - 7200000,
-          status: "completed",
-          hash: "0x2345...6789",
-          fromAddress: address
-        },
-        {
-          id: "3",
-          type: "swap",
-          amount: "0.5",
-          token: "G-TOKEN",
-          timestamp: Date.now() - 86400000,
-          status: "completed",
-          hash: "0x3456...7890"
-        }
-      ]
-
-      setTransactionHistory(mockTransactions)
-    } catch (error) {
-      console.error("Failed to load transaction history:", error)
-    }
-  }
-
-  // Handle faucet claim success with immediate sync
-  const handleFaucetClaimSuccess = useCallback(async () => {
-    console.log("🎉 Faucet claim successful, syncing balances...")
-    if (connectedAddress) {
-      // Wait a moment for blockchain confirmation
-      setTimeout(() => {
-        syncWalletBalances(connectedAddress, false)
-      }, 2000)
-    }
-  }, [connectedAddress, syncWalletBalances]) // Add syncWalletBalances to dependencies
-
-  // Connect wallet
-  const connectWallet = async () => {
-    try {
-      setIsLoading(true)
-      
-      if (typeof window !== "undefined" && (window as any).ethereum) {
-        const accounts = await requestWalletAccounts()
-        
-        if (accounts.length > 0) {
-          const address = accounts[0]
-          setConnectedAddress(address)
-          
-          // Setup event listeners first
-          setupEventListeners(address)
-          
-          // Then sync balances
-          await syncWalletBalances(address)
-          await loadTransactionHistory(address)
-        }
-      } else {
-        setError("MetaMask not detected. Please install MetaMask.")
-      }
-    } catch (error) {
-      console.error("Failed to connect wallet:", error)
-      setError("Failed to connect wallet")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // Manual refresh with full synchronization
-  const handleManualRefresh = async () => {
-    if (connectedAddress) {
-      await syncWalletBalances(connectedAddress, true)
-      await loadTransactionHistory(connectedAddress)
-    }
-  }
-
-  // Format numbers for display
-  const formatNumber = (num: string | number) => {
-    const n = typeof num === "string" ? parseFloat(num) : num
-    if (n >= 1000000) {
-      return `${(n / 1000000).toFixed(2)}M`
-    } else if (n >= 1000) {
-      return `${(n / 1000).toFixed(2)}K`
-    }
-    return n.toLocaleString()
-  }
-
-  // Format transaction type
-  const getTransactionIcon = (type: string) => {
-    switch (type) {
-      case "claim":
-        return <Droplets className="h-4 w-4" />
-      case "swap":
-        return <ArrowUpDown className="h-4 w-4" />
-      case "stake":
-        return <TrendingUp className="h-4 w-4" />
-      case "redeem":
-        return <Coins className="h-4 w-4" />
-      case "transfer":
-        return <ArrowUpDown className="h-4 w-4" />
-      default:
-        return <Activity className="h-4 w-4" />
-    }
-  }
-
-  // Render the stable demo snapshot immediately. Blockchain reads begin only
-  // after the user explicitly connects or requests a sync.
-  useEffect(() => {
-    const addressPromise = checkWalletConnection()
-    addressPromise.then((address) => {
-      if (address) setConnectedAddress(address)
-    })
-
-    return () => {
-      contractService.cleanup()
-    }
-  }, [])
-
-  // Listen for account changes
-  useEffect(() => {
-    if (typeof window !== "undefined" && (window as any).ethereum) {
-      const handleAccountsChanged = async (accounts: string[]) => {
-        // Cleanup previous listeners
-        if (connectedAddress) {
-          contractService.removeEventListeners(connectedAddress)
-        }
-
-        if (accounts.length > 0) {
-          const newAddress = accounts[0]
-          setConnectedAddress(newAddress)
-          setupEventListeners(newAddress)
-          await syncWalletBalances(newAddress)
-          await loadTransactionHistory(newAddress)
-        } else {
-          setConnectedAddress(null)
-          setBalances({
-            idrtBalance: "0",
-            goldTokenBalance: "0",
-            bnbBalance: "0",
-            faucetStatus: {
-              canClaim: false,
-              nextClaimTime: 0,
-              lastClaimTime: 0,
-              claimAmount: "1000000",
-              availableBalance: "0",
-              isPaused: false,
-              cooldownPeriod: 86400
-            },
-            lastSyncTime: 0
-          })
-          setPortfolioMetrics({
-            totalValueUSD: "0",
-            totalValueIDR: "0",
-            portfolioChange24h: "+0.00%",
-            idrtPercentage: 0,
-            goldTokenPercentage: 0,
-            bnbPercentage: 0
-          })
-        }
-      }
-
-      ;(window as any).ethereum.on("accountsChanged", handleAccountsChanged)
-
-      return () => {
-        ;(window as any).ethereum.removeListener("accountsChanged", handleAccountsChanged)
-      }
-    }
-  }, [connectedAddress, setupEventListeners, syncWalletBalances]) // Add syncWalletBalances to dependencies
-
-  // Auto-sync every 30 seconds
-  useEffect(() => {
-    if (!connectedAddress) return
-
-    const interval = setInterval(() => {
-      syncWalletBalances(connectedAddress, false)
-    }, 30000)
-
-    return () => clearInterval(interval)
-  }, [connectedAddress, syncWalletBalances]) // Add syncWalletBalances to dependencies
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen py-8 px-4">
-        <div className="container mx-auto max-w-4xl">
-          <div className="text-center space-y-6">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gold mx-auto"></div>
-            <p className="text-soft-white">Loading portfolio...</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (!connectedAddress) {
-    return (
-      <div className="min-h-screen py-8 px-4">
-        <div className="container mx-auto max-w-4xl">
-          <div className="text-center space-y-6">
-            <div className="space-y-2">
-              <h1 className="text-4xl font-bold text-soft-white">Portfolio Dashboard</h1>
-              <p className="text-soft-white/70">Connect your wallet to view synchronized balances</p>
-            </div>
-
-            <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm max-w-md mx-auto">
-              <CardHeader>
-                <CardTitle className="text-gold flex items-center justify-center">
-                  <Wallet className="h-5 w-5 mr-2" />
-                  Connect Wallet
-                </CardTitle>
-                <CardDescription className="text-soft-white/70 text-center">
-                  Connect your wallet to access synchronized DeFi portfolio with real-time updates
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button 
-                  onClick={connectWallet}
-                  className="w-full bg-prosperity hover:bg-prosperity/80 text-navy-900"
-                >
-                  <Wallet className="h-4 w-4 mr-2" />
-                  Connect MetaMask
-                </Button>
-                
-                {error && (
-                  <Alert className="mt-4 border-red-500/20 bg-red-500/10">
-                    <AlertTriangle className="h-4 w-4 text-red-400" />
-                    <AlertDescription className="text-red-400">
-                      {error}
-                    </AlertDescription>
-                  </Alert>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [range, setRange] = useState("7d")
 
   return (
-    <div className="min-h-screen py-8 px-4">
-      <div className="container mx-auto max-w-6xl">
-        {/* Header with Sync Status */}
-        <div className="mb-8">
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="flex min-h-screen">
+        <aside className={cn("fixed inset-y-0 left-0 z-50 flex w-64 -translate-x-full flex-col border-r border-border/70 bg-card/95 p-5 backdrop-blur-xl transition-transform lg:static lg:translate-x-0", sidebarOpen && "translate-x-0")}>
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold text-soft-white mb-2">Portfolio Dashboard</h1>
-              <div className="flex items-center space-x-4">
-                <div className="flex flex-wrap items-center gap-3 text-sm text-soft-white/70">
-                  <p>Connected: {connectedAddress?.slice(0, 6)}...{connectedAddress?.slice(-4)}</p>
-                  <Badge className={dataSource === "mock" ? "border-gold/30 bg-gold/10 text-gold" : "border-prosperity/30 bg-prosperity/10 text-prosperity"}>
-                    {dataSource === "mock" ? "Demo data" : "Smart contract data"}
-                  </Badge>
-                </div>
-                {lastSyncTime && (
-                  <div className="flex items-center text-sm text-prosperity">
-                    <Database className="h-4 w-4 mr-1" />
-                    Last sync: {lastSyncTime.toLocaleTimeString()}
-                  </div>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              {isSyncing && (
-                <div className="flex items-center space-x-2">
-                  <div className="w-32">
-                    <Progress value={syncProgress} className="h-2" />
-                  </div>
-                  <span className="text-sm text-soft-white/70">Syncing...</span>
-                </div>
-              )}
-              <Button
-                onClick={handleManualRefresh}
-                disabled={isSyncing}
-                variant="outline"
-                className="border-gold/20 text-soft-white hover:bg-gold/10 bg-transparent"
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
-                Sync
-              </Button>
-            </div>
+            <Link href="/" className="flex items-center gap-3">
+              <div className="flex size-10 items-center justify-center rounded-xl bg-primary/15 ring-1 ring-primary/40"><Coins className="size-5 text-primary" /></div>
+              <div><p className="text-sm font-semibold tracking-[0.18em] text-primary">AURIX</p><p className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">Finance</p></div>
+            </Link>
+            <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setSidebarOpen(false)} aria-label="Close menu"><X /></Button>
           </div>
-        </div>
+          <div className="mt-10 flex flex-1 flex-col gap-1">
+            <p className="mb-3 px-3 text-[10px] font-medium uppercase tracking-[0.2em] text-muted-foreground">Workspace</p>
+            {navItems.map((item) => { const Icon = item.icon; return <Link key={item.label} href={item.href} className={cn("flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground", item.label === "Dashboard" && "bg-primary/10 font-medium text-primary")}><Icon className="size-4" />{item.label}</Link> })}
+          </div>
+          <div className="rounded-2xl border border-primary/20 bg-primary/[0.06] p-4"><div className="flex items-center gap-2 text-xs font-medium text-primary"><ShieldCheck className="size-4" />Reserves verified</div><p className="mt-2 text-xs leading-5 text-muted-foreground">Gold reserves are independently attested and visible on-chain.</p><Link href="#proof-of-reserves" className="mt-3 inline-flex text-xs font-medium text-foreground hover:text-primary">View proof of reserves <ArrowUpRight className="ml-1 size-3" /></Link></div>
+        </aside>
 
-        {/* Real-time Balance Overview */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-gold flex items-center text-lg">
-                <DollarSign className="h-5 w-5 mr-2" />
-                Total Value
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-soft-white">
-                ${formatNumber(portfolioMetrics.totalValueUSD)}
-              </div>
-              <div className="text-sm text-soft-white/70">
-                ≈ Rp {formatNumber(portfolioMetrics.totalValueIDR)}
-              </div>
-              <div className={`text-sm mt-1 flex items-center ${
-                portfolioMetrics.portfolioChange24h.startsWith('+') 
-                  ? 'text-prosperity' 
-                  : 'text-red-400'
-              }`}>
-                <TrendingUp className="h-3 w-3 mr-1" />
-                {portfolioMetrics.portfolioChange24h} (24h)
-              </div>
-            </CardContent>
-          </Card>
+        <main className="min-w-0 flex-1">
+          <header className="sticky top-0 z-40 flex h-20 items-center justify-between border-b border-border/70 bg-background/85 px-5 backdrop-blur-xl lg:px-8">
+            <div className="flex items-center gap-3"><Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setSidebarOpen(true)} aria-label="Open menu"><Menu /></Button><div><p className="text-xs text-muted-foreground">Good morning</p><h1 className="text-lg font-semibold tracking-tight">Portfolio dashboard</h1></div></div>
+            <div className="flex items-center gap-2 sm:gap-3"><div className="hidden items-center gap-2 rounded-xl border border-border/70 bg-card/60 px-3 py-2 text-xs text-muted-foreground sm:flex"><CircleDollarSign className="size-4 text-primary" />G-Token <span className="font-medium text-foreground">Rp 1,245,000</span></div><Badge variant="outline" className="hidden border-primary/30 bg-primary/10 text-primary sm:inline-flex"><span className="mr-1.5 size-1.5 rounded-full bg-primary" />PoR verified</Badge><Button variant="outline" className="gap-2 border-border/70 bg-card/60 text-xs"><span className="hidden sm:inline">Arbitrum</span><ChevronDown className="size-3" /></Button><Button variant="outline" className="gap-2 border-border/70 bg-card/60 font-mono text-xs">0x1234...5678<ChevronDown className="size-3" /></Button></div>
+          </header>
 
-          <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-gold flex items-center text-lg">
-                <Coins className="h-5 w-5 mr-2" />
-                IDRT Balance
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-soft-white">
-                {formatNumber(balances.idrtBalance)}
-              </div>
-              <div className="text-sm text-soft-white/70">Indonesian Rupiah Token</div>
-              <div className="flex items-center mt-2">
-                <div className="w-full bg-navy-900/50 rounded-full h-2 mr-2">
-                  <div 
-                    className="bg-prosperity h-2 rounded-full transition-all duration-500" 
-                    style={{ width: `${portfolioMetrics.idrtPercentage}%` }}
-                  ></div>
-                </div>
-                <span className="text-xs text-soft-white/70">{portfolioMetrics.idrtPercentage.toFixed(1)}%</span>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="mx-auto max-w-[1500px] p-5 lg:p-8">
+            <section className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="mb-2 text-xs font-medium uppercase tracking-[0.18em] text-primary">Your holdings</p><h2 className="text-3xl font-semibold tracking-tight">A clear view of your gold-backed assets.</h2><p className="mt-2 max-w-2xl text-sm text-muted-foreground">Track balances, rewards, and physical gold equivalence from one secure workspace.</p></div><Button variant="outline" className="w-fit gap-2 border-border/70 bg-card/60"><RefreshCw className="size-4" />Refresh data</Button></section>
 
-          <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-gold flex items-center text-lg">
-                <TrendingUp className="h-5 w-5 mr-2" />
-                Gold Tokens
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-soft-white">
-                {formatNumber(balances.goldTokenBalance)}
-              </div>
-              <div className="text-sm text-soft-white/70">G-TOKEN</div>
-              <div className="flex items-center mt-2">
-                <div className="w-full bg-navy-900/50 rounded-full h-2 mr-2">
-                  <div 
-                    className="bg-gold h-2 rounded-full transition-all duration-500" 
-                    style={{ width: `${portfolioMetrics.goldTokenPercentage}%` }}
-                  ></div>
-                </div>
-                <span className="text-xs text-soft-white/70">{portfolioMetrics.goldTokenPercentage.toFixed(1)}%</span>
-              </div>
-            </CardContent>
-          </Card>
+            <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><MetricCard title="Total balance" value="12,450 G-TOKEN" detail="≈ Rp 15,498,750" change="+2.84% 24h" icon={Wallet} accent /><MetricCard title="Physical equivalent" value="12.45 gram" detail="AU 99.99% purity" icon={Coins} /><MetricCard title="Staked" value="5,000 G-TOKEN" detail="Earning 3.2% APY" change="+160 G-TOKEN" icon={TrendingUp} /><MetricCard title="Pending rewards" value="42.50 USDC" detail="Available to claim" icon={Sparkles} /></section>
 
-          <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-gold flex items-center text-lg">
-                <Wallet className="h-5 w-5 mr-2" />
-                BNB Balance
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-soft-white">
-                {parseFloat(balances.bnbBalance).toFixed(4)}
-              </div>
-              <div className="text-sm text-soft-white/70">Binance Coin</div>
-              <div className="flex items-center mt-2">
-                <div className="w-full bg-navy-900/50 rounded-full h-2 mr-2">
-                  <div 
-                    className="bg-yellow-500 h-2 rounded-full transition-all duration-500" 
-                    style={{ width: `${portfolioMetrics.bnbPercentage}%` }}
-                  ></div>
-                </div>
-                <span className="text-xs text-soft-white/70">{portfolioMetrics.bnbPercentage.toFixed(1)}%</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+              <Card className="border-border/60 bg-card/70"><CardHeader className="flex flex-row items-start justify-between gap-4"><div><CardTitle>Portfolio value</CardTitle><CardDescription>Estimated value across your gold-backed positions.</CardDescription></div><ToggleGroup type="single" value={range} onValueChange={(value) => value && setRange(value)} variant="outline" size="sm"><ToggleGroupItem value="7d">7d</ToggleGroupItem><ToggleGroupItem value="30d">30d</ToggleGroupItem><ToggleGroupItem value="90d">90d</ToggleGroupItem><ToggleGroupItem value="1y">1y</ToggleGroupItem></ToggleGroup></CardHeader><CardContent><div className="mb-4 flex items-baseline gap-3"><span className="text-3xl font-semibold">{formatIDR(15498750)}</span><span className="text-sm font-medium text-primary">+2.84%</span></div><div className="h-[280px] w-full"><ResponsiveContainer width="100%" height="100%"><AreaChart data={chartData} margin={{ top: 10, right: 8, left: -18, bottom: 0 }}><defs><linearGradient id="portfolioFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.28} /><stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} /></linearGradient></defs><CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.45} /><XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 11 }} /><YAxis hide domain={[14700000, 15700000]} /><Tooltip contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: 12, color: "hsl(var(--foreground))" }} formatter={(value: number) => [formatIDR(value), "Portfolio"]} /><Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" strokeWidth={2.5} fill="url(#portfolioFill)" /></AreaChart></ResponsiveContainer></div></CardContent></Card>
 
-        {/* Synchronization Status */}
-        <Card className="bg-navy-800/50 border-prosperity/20 backdrop-blur-sm mb-8">
-          <CardHeader>
-            <CardTitle className="text-prosperity flex items-center">
-              <Zap className="h-5 w-5 mr-2" />
-              Smart Contract Synchronization
-            </CardTitle>
-            <CardDescription className="text-soft-white/70">
-              Real-time balance synchronization with IDRT and Faucet contracts
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-3 gap-4">
-              <div className="flex items-center space-x-3">
-                <div className="h-3 w-3 rounded-full bg-prosperity animate-pulse"></div>
-                <div>
-                  <div className="text-sm font-medium text-soft-white">IDRT Contract</div>
-                  <div className="text-xs text-soft-white/70">Balance: {formatNumber(balances.idrtBalance)} IDRT</div>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="h-3 w-3 rounded-full bg-gold animate-pulse"></div>
-                <div>
-                  <div className="text-sm font-medium text-soft-white">Faucet Contract</div>
-                  <div className="text-xs text-soft-white/70">
-                    Status: {balances.faucetStatus.canClaim ? "Ready" : "Cooldown"}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="h-3 w-3 rounded-full bg-blue-500 animate-pulse"></div>
-                <div>
-                  <div className="text-sm font-medium text-soft-white">Event Listeners</div>
-                  <div className="text-xs text-soft-white/70">Active & Monitoring</div>
-                </div>
-              </div>
+              <Card id="proof-of-reserves" className="border-primary/20 bg-card/70"><CardHeader><div className="flex items-center justify-between"><div><CardTitle>Proof of reserves</CardTitle><CardDescription>Live reserve coverage</CardDescription></div><div className="rounded-xl bg-primary/15 p-2 text-primary"><ShieldCheck className="size-5" /></div></div></CardHeader><CardContent className="flex flex-col gap-5"><div className="rounded-2xl border border-primary/15 bg-primary/[0.06] p-4"><p className="text-xs text-muted-foreground">Reserve ratio</p><p className="mt-1 text-3xl font-semibold text-primary">100.00%</p><p className="mt-1 text-xs text-muted-foreground">Fully backed by allocated gold</p></div><div className="grid grid-cols-2 gap-4"><div><p className="text-xs text-muted-foreground">Gold reserve</p><p className="mt-1 font-semibold">1,247.3 kg</p></div><div><p className="text-xs text-muted-foreground">Token supply</p><p className="mt-1 font-semibold">1,247,300</p></div></div><div className="flex items-center gap-2 text-xs text-muted-foreground"><Activity className="size-3.5 text-primary" />Last update: 2 min ago</div><Button variant="outline" className="w-full gap-2 border-border/70 bg-transparent">View on Chainlink <ExternalLink className="size-3.5" /></Button></CardContent></Card>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Main Content Tabs */}
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-navy-800/50 border-gold/20">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-gold/20 data-[state=active]:text-gold">
-              <PieChart className="h-4 w-4 mr-2" />
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="faucet" className="data-[state=active]:bg-gold/20 data-[state=active]:text-gold">
-              <Droplets className="h-4 w-4 mr-2" />
-              Faucet
-            </TabsTrigger>
-            <TabsTrigger value="transactions" className="data-[state=active]:bg-gold/20 data-[state=active]:text-gold">
-              <BarChart3 className="h-4 w-4 mr-2" />
-              Transactions
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="data-[state=active]:bg-gold/20 data-[state=active]:text-gold">
-              <Activity className="h-4 w-4 mr-2" />
-              Analytics
-            </TabsTrigger>
-          </TabsList>
-
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid lg:grid-cols-2 gap-6">
-              <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-gold">Portfolio Allocation</CardTitle>
-                  <CardDescription className="text-soft-white/70">
-                    Real-time distribution of your synchronized assets
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-3 h-3 rounded-full bg-prosperity"></div>
-                        <span className="text-soft-white/70">IDRT</span>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-soft-white font-semibold">
-                          {formatNumber(balances.idrtBalance)}
-                        </div>
-                        <div className="text-xs text-soft-white/50">
-                          {portfolioMetrics.idrtPercentage.toFixed(1)}%
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-3 h-3 rounded-full bg-gold"></div>
-                        <span className="text-soft-white/70">G-TOKEN</span>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-soft-white font-semibold">
-                          {formatNumber(balances.goldTokenBalance)}
-                        </div>
-                        <div className="text-xs text-soft-white/50">
-                          {portfolioMetrics.goldTokenPercentage.toFixed(1)}%
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center space-x-2">
-                        <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                        <span className="text-soft-white/70">BNB</span>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-soft-white font-semibold">
-                          {parseFloat(balances.bnbBalance).toFixed(4)}
-                        </div>
-                        <div className="text-xs text-soft-white/50">
-                          {portfolioMetrics.bnbPercentage.toFixed(1)}%
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-gold">Quick Actions</CardTitle>
-                  <CardDescription className="text-soft-white/70">
-                    Common portfolio actions with real-time updates
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button className="w-full bg-prosperity hover:bg-prosperity/80 text-navy-900">
-                    <ArrowUpDown className="h-4 w-4 mr-2" />
-                    Swap Tokens
-                  </Button>
-                  <Button className="w-full bg-gold hover:bg-gold-600 text-navy-900">
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    Stake G-TOKEN
-                  </Button>
-                  <Button className="w-full bg-soft-white hover:bg-soft-white/80 text-navy-900">
-                    <Coins className="h-4 w-4 mr-2" />
-                    Redeem Gold
-                  </Button>
-                  <Button 
-                    onClick={handleManualRefresh}
-                    disabled={isSyncing}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    <Database className="h-4 w-4 mr-2" />
-                    Force Sync
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          {/* Faucet Tab with Enhanced Synchronization */}
-          <TabsContent value="faucet" className="space-y-6">
-            <FaucetStatus 
-              userAddress={connectedAddress} 
-              onClaimSuccess={handleFaucetClaimSuccess}
-            />
-            
-            {/* Faucet Statistics */}
-            <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-gold">Faucet Statistics</CardTitle>
-                <CardDescription className="text-soft-white/70">
-                  Real-time faucet contract data
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-soft-white/70">Available Balance:</span>
-                      <span className="text-prosperity font-semibold">
-                        {formatNumber(balances.faucetStatus.availableBalance)} IDRT
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-soft-white/70">Claim Amount:</span>
-                      <span className="text-gold font-semibold">
-                        {formatNumber(balances.faucetStatus.claimAmount)} IDRT
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-soft-white/70">Cooldown Period:</span>
-                      <span className="text-soft-white">
-                        {Math.floor(balances.faucetStatus.cooldownPeriod / 3600)}h
-                      </span>
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-soft-white/70">Can Claim:</span>
-                      <Badge className={
-                        balances.faucetStatus.canClaim 
-                          ? "bg-prosperity/20 text-prosperity border-prosperity/30"
-                          : "bg-red-500/20 text-red-400 border-red-500/30"
-                      }>
-                        {balances.faucetStatus.canClaim ? "Yes" : "No"}
-                      </Badge>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-soft-white/70">Status:</span>
-                      <Badge className={
-                        balances.faucetStatus.isPaused
-                          ? "bg-red-500/20 text-red-400 border-red-500/30"
-                          : "bg-prosperity/20 text-prosperity border-prosperity/30"
-                      }>
-                        {balances.faucetStatus.isPaused ? "Paused" : "Active"}
-                      </Badge>
-                    </div>
-                    {balances.faucetStatus.nextClaimTime > 0 && (
-                      <div className="flex justify-between">
-                        <span className="text-soft-white/70">Next Claim:</span>
-                        <span className="text-soft-white text-sm">
-                          <Clock className="h-3 w-3 inline mr-1" />
-                          {new Date(balances.faucetStatus.nextClaimTime).toLocaleTimeString()}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Transactions Tab */}
-          <TabsContent value="transactions" className="space-y-6">
-            <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-gold">Transaction History</CardTitle>
-                <CardDescription className="text-soft-white/70">
-                  Your recent DeFi activities with smart contract integration
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {transactionHistory.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Activity className="h-12 w-12 text-soft-white/30 mx-auto mb-4" />
-                    <p className="text-soft-white/70">No transactions yet</p>
-                    <p className="text-soft-white/50 text-sm">
-                      Start using the platform to see your transaction history
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {transactionHistory.map((tx) => (
-                      <div
-                        key={tx.id}
-                        className="flex items-center justify-between p-3 rounded-lg bg-navy-900/30 border border-gold/10"
-                      >
-                        <div className="flex items-center space-x-3">
-                          <div className="p-2 rounded-full bg-gold/20">
-                            {getTransactionIcon(tx.type)}
-                          </div>
-                          <div>
-                            <div className="font-medium text-soft-white capitalize">
-                              {tx.type}
-                            </div>
-                            <div className="text-sm text-soft-white/70">
-                              {tx.amount} {tx.token}
-                            </div>
-                            {tx.hash && (
-                              <div className="text-xs text-soft-white/50 font-mono">
-                                {tx.hash}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <Badge
-                            className={
-                              tx.status === "completed"
-                                  ? "bg-prosperity/20 text-prosperity border-prosperity/30"
-                                  : tx.status === "pending"
-                                  ? "bg-gold/20 text-gold border-gold/30"
-                                  : "bg-red-500/20 text-red-400 border-red-500/30"
-                              }
-                          >
-                            {tx.status === "completed" && <CheckCircle className="h-3 w-3 mr-1" />}
-                            {tx.status}
-                          </Badge>
-                          <div className="text-xs text-soft-white/50 mt-1">
-                            {new Date(tx.timestamp).toLocaleString()}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Analytics Tab */}
-          <TabsContent value="analytics" className="space-y-6">
-            <div className="grid lg:grid-cols-2 gap-6">
-              <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-gold">Synchronization Metrics</CardTitle>
-                  <CardDescription className="text-soft-white/70">
-                    Smart contract synchronization performance
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-soft-white/70">Last Sync:</span>
-                      <span className="text-soft-white font-semibold">
-                        {lastSyncTime ? lastSyncTime.toLocaleTimeString() : "Never"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-soft-white/70">Sync Frequency:</span>
-                      <span className="text-prosperity font-semibold">30 seconds</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-soft-white/70">Event Listeners:</span>
-                      <span className="text-prosperity font-semibold">Active</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-soft-white/70">Real-time Updates:</span>
-                      <Badge className="bg-prosperity/20 text-prosperity border-prosperity/30">
-                        <Zap className="h-3 w-3 mr-1" />
-                        Enabled
-                      </Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-navy-800/50 border-gold/20 backdrop-blur-sm">
-                <CardHeader>
-                  <CardTitle className="text-gold">Platform Usage</CardTitle>
-                  <CardDescription className="text-soft-white/70">
-                    Your activity across different features
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex justify-between">
-                      <span className="text-soft-white/70">Total Transactions:</span>
-                      <span className="text-soft-white font-semibold">{transactionHistory.length}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-soft-white/70">Faucet Claims:</span>
-                      <span className="text-soft-white font-semibold">
-                        {transactionHistory.filter(tx => tx.type === "claim").length}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-soft-white/70">Token Swaps:</span>
-                      <span className="text-soft-white font-semibold">
-                        {transactionHistory.filter(tx => tx.type === "swap").length}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-soft-white/70">Success Rate:</span>
-                      <span className="text-prosperity font-semibold">
-                        {transactionHistory.length > 0 
-                          ? Math.round((transactionHistory.filter(tx => tx.status === "completed").length / transactionHistory.length) * 100)
-                          : 0}%
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-        </Tabs>
-
-        {/* Error Display */}
-        {error && (
-          <Alert className="border-red-500/20 bg-red-500/10">
-            <AlertTriangle className="h-4 w-4 text-red-400" />
-            <AlertDescription className="text-red-400">
-              {error}
-            </AlertDescription>
-          </Alert>
-        )}
+            <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]"><Card className="border-border/60 bg-card/70"><CardHeader className="flex flex-row items-center justify-between"><div><CardTitle>Recent activity</CardTitle><CardDescription>Your latest portfolio movements</CardDescription></div><Button variant="ghost" className="text-xs text-primary">View all <ArrowUpRight className="ml-1 size-3.5" /></Button></CardHeader><CardContent><div className="overflow-x-auto"><Table><TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Type</TableHead><TableHead>Amount</TableHead><TableHead>Price</TableHead><TableHead>Status</TableHead><TableHead>Tx hash</TableHead></TableRow></TableHeader><TableBody>{activity.map((item) => <TableRow key={item.hash}><TableCell className="whitespace-nowrap text-xs text-muted-foreground">{item.date}</TableCell><TableCell className="whitespace-nowrap text-sm font-medium">{item.type}</TableCell><TableCell className="whitespace-nowrap text-sm">{item.amount}</TableCell><TableCell className="whitespace-nowrap text-xs text-muted-foreground">{item.price}</TableCell><TableCell><Badge variant="outline" className={cn("border-primary/25 bg-primary/10 text-primary", item.status === "Pending" && "border-amber-400/25 bg-amber-400/10 text-amber-300")}>{item.status}</Badge></TableCell><TableCell className="font-mono text-xs text-muted-foreground">{item.hash}</TableCell></TableRow>)}</TableBody></Table></div></CardContent></Card><Card className="border-border/60 bg-card/70"><CardHeader><CardTitle>Quick actions</CardTitle><CardDescription>Move assets in a few clicks.</CardDescription></CardHeader><CardContent className="grid grid-cols-2 gap-3"><Button asChild className="h-20 flex-col gap-2 bg-primary text-primary-foreground hover:bg-primary/90"><Link href="/swap"><ShoppingCart className="size-5" />Buy</Link></Button><Button asChild variant="outline" className="h-20 flex-col gap-2 border-border/70 bg-transparent"><Link href="/swap"><ArrowUpRight className="size-5" />Sell</Link></Button><Button asChild variant="outline" className="h-20 flex-col gap-2 border-border/70 bg-transparent"><Link href="/redemption"><ArrowDownToLine className="size-5" />Redeem</Link></Button><Button asChild variant="outline" className="h-20 flex-col gap-2 border-border/70 bg-transparent"><Link href="/staking"><LockKeyhole className="size-5" />Stake</Link></Button></CardContent></Card></div>
+          </div>
+        </main>
       </div>
     </div>
   )
