@@ -527,7 +527,7 @@ export class ContractService {
     }
   }
 
-  async connectSigner() {
+  async connectSigner(address?: string) {
     if (!this.provider) {
       await this.initialize()
     }
@@ -536,7 +536,9 @@ export class ContractService {
       throw new Error("Wallet provider not available")
     }
 
-    this.signer = await this.provider.getSigner()
+    // Use the already-authorized address so ethers does not issue another
+    // wallet connection request after the explicit user approval.
+    this.signer = await this.provider.getSigner(address)
     return this.signer
   }
 
