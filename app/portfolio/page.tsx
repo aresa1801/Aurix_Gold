@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
 import { Wallet, TrendingUp, Coins, ArrowUpDown, RefreshCw, DollarSign, Droplets, AlertTriangle, CheckCircle, PieChart, BarChart3, Activity, Clock, Zap, Database } from 'lucide-react'
-import { contractService } from "@/services/contracts"
+import { contractService, requestWalletAccounts } from "@/services/contracts"
 import { useLanguage } from "@/contexts/language-context"
 import FaucetStatus from "@/components/faucet-status"
 import { toast } from "@/hooks/use-toast"
@@ -279,9 +279,7 @@ export default function PortfolioPage() {
       setIsLoading(true)
       
       if (typeof window !== "undefined" && (window as any).ethereum) {
-        const accounts = await (window as any).ethereum.request({
-          method: "eth_requestAccounts",
-        })
+        const accounts = await requestWalletAccounts()
         
         if (accounts.length > 0) {
           const address = accounts[0]

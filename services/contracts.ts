@@ -15,6 +15,31 @@ export const CONTRACT_ADDRESSES = {
 // Admin wallet address
 export const ADMIN_ADDRESS = "0xcd3FF5f1b21fEAF1610402De0eF5ac4d5EeC4aB3"
 
+let walletRequestInFlight: Promise<string[]> | null = null
+
+/**
+ * Returns already-authorized accounts without prompting. Only asks MetaMask
+ * for permission after an explicit user action, and coalesces simultaneous
+ * requests so multiple components cannot open competing connection prompts.
+ */
+export async function requestWalletAccounts(): Promise<string[]> {
+  const ethereum = typeof window !== "undefined" ? (window as any).ethereum : undefined
+  if (!ethereum?.request) {
+    throw new Error("MetaMask is not installed or unavailable in this browser.")
+  }
+
+  const authorizedAccounts = (await ethereum.request({ method: "eth_accounts" })) as string[]
+  if (authorizedAccounts?.length) return authorizedAccounts
+
+  if (!walletRequestInFlight) {
+    walletRequestInFlight = (ethereum.request({ method: "eth_requestAccounts" }) as Promise<string[]>).finally(() => {
+      walletRequestInFlight = null
+    })
+  }
+
+  return walletRequestInFlight
+}
+
 // ABIs
 export const FAUCET_ABI = [
   {

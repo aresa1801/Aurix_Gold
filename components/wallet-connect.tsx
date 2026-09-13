@@ -22,7 +22,7 @@ import {
 import { Wallet, ChevronDown, Copy, ExternalLink, Power, RefreshCw, Network, Coins } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { useLanguage } from "@/contexts/language-context"
-import { contractService } from "@/services/contracts"
+import { contractService, requestWalletAccounts } from "@/services/contracts"
 
 const networks = [
   {
@@ -169,7 +169,7 @@ export function WalletConnect() {
         throw new Error("MetaMask is not installed. Install MetaMask and try again.")
       }
 
-      const accounts = (await ethereum.request({ method: "eth_requestAccounts" })) as string[]
+      const accounts = await requestWalletAccounts()
       const address = accounts?.[0]
       if (!address) throw new Error("No wallet account was selected.")
 
