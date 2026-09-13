@@ -5,7 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Menu, Briefcase, ArrowLeftRight, Lock, Send, User, RefreshCw, Settings } from "lucide-react"
+import { Menu, Briefcase, ArrowLeftRight, Lock, Send, User, RefreshCw, Settings, ShieldCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { WalletConnect } from "./wallet-connect"
 import { LanguageToggle } from "./language-toggle"
@@ -69,6 +69,7 @@ export function Navigation() {
     { name: t("nav.staking"), href: "/staking", icon: Lock },
     { name: t("nav.redemption"), href: "/redemption", icon: Send },
     { name: t("nav.portfolio"), href: "/portfolio", icon: User },
+    { name: "KYC Center", href: "/kyc", icon: ShieldCheck },
     ...(isAdmin ? [{ name: "Admin", href: "/admin", icon: Settings }] : []),
   ]
 
