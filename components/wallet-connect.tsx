@@ -23,6 +23,7 @@ import { Wallet, ChevronDown, Copy, ExternalLink, Power, RefreshCw, Network, Coi
 import { toast } from "@/hooks/use-toast"
 import { useLanguage } from "@/contexts/language-context"
 import { contractService, requestWalletAccounts } from "@/services/contracts"
+import { connectGoogleSmartWallet, disconnectGoogleSmartWallet, isWeb3AuthConfigured } from "@/services/web3auth-wallet"
 
 const networks = [
   {
@@ -62,6 +63,7 @@ interface WalletState {
   goldTokenBalance: string
   network: (typeof networks)[0] | null
   isConnecting: boolean
+  providerType: "metamask" | "web3auth" | null
   canClaimFaucet: boolean
   nextClaimTime: number
 }
@@ -76,6 +78,7 @@ export function WalletConnect() {
     goldTokenBalance: "0.0",
     network: null,
     isConnecting: false,
+    providerType: null,
     canClaimFaucet: false,
     nextClaimTime: 0,
   })
@@ -177,7 +180,7 @@ export function WalletConnect() {
       const network = networks.find((item) => item.chainId.toLowerCase() === String(chainId).toLowerCase()) ?? networks[0]
 
       await contractService.connectSigner(address)
-      setWallet((prev) => ({ ...prev, isConnected: true, address, network, isConnecting: false }))
+      setWallet((prev) => ({ ...prev, isConnected: true, address, network, providerType: "metamask", isConnecting: false }))
       await loadWalletData(address)
 
       toast({
@@ -195,7 +198,32 @@ export function WalletConnect() {
     }
   }
 
+  const connectSmartWallet = async () => {
+    if (!isWeb3AuthConfigured()) {
+      toast({ title: "Google smart wallet belum dikonfigurasi", description: "Tambahkan NEXT_PUBLIC_WEB3AUTH_CLIENT_ID untuk mengaktifkan login Google.", variant: "destructive" })
+      return
+    }
+    if (wallet.isConnecting) return
+    setWallet((prev) => ({ ...prev, isConnecting: true }))
+    try {
+      const provider = await connectGoogleSmartWallet()
+      const accounts = (await provider.request({ method: "eth_accounts" })) as string[]
+      const address = accounts?.[0]
+      if (!address) throw new Error("No Google smart wallet account was returned.")
+      const chainId = await provider.request({ method: "eth_chainId" })
+      const network = networks.find((item) => item.chainId.toLowerCase() === String(chainId).toLowerCase()) ?? networks[0]
+      await contractService.connectSigner(address, provider as any)
+      setWallet((prev) => ({ ...prev, isConnected: true, address, network, providerType: "web3auth", isConnecting: false }))
+      await loadWalletData(address)
+      toast({ title: "Google smart wallet connected", description: `${address.slice(0, 6)}...${address.slice(-4)}` })
+    } catch (error: any) {
+      setWallet((prev) => ({ ...prev, isConnecting: false }))
+      toast({ title: "Google wallet connection failed", description: error?.message ?? "Please try again.", variant: "destructive" })
+    }
+  }
+
   const disconnectWallet = () => {
+    if (wallet.providerType === "web3auth") void disconnectGoogleSmartWallet()
     setWallet({
       isConnected: false,
       address: "",
@@ -345,23 +373,25 @@ export function WalletConnect() {
 
   if (!wallet.isConnected) {
     return (
-      <Button
-        onClick={connectWallet}
-        disabled={wallet.isConnecting}
-        className="bg-gold hover:bg-gold-600 text-navy-900 font-semibold"
-      >
-        {wallet.isConnecting ? (
-          <>
-            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-            {t("wallet.connecting")}
-          </>
-        ) : (
-          <>
-            <Wallet className="h-4 w-4 mr-2" />
-            {t("nav.connectWallet")}
-          </>
-        )}
-      </Button>
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button disabled={wallet.isConnecting} className="bg-gold hover:bg-gold-600 text-navy-900 font-semibold">
+            {wallet.isConnecting ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Wallet className="h-4 w-4 mr-2" />}
+            {wallet.isConnecting ? t("wallet.connecting") : t("nav.connectWallet")}
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="bg-navy-800 border-gold/20">
+          <DialogHeader>
+            <DialogTitle className="text-gold">Connect to AuriX</DialogTitle>
+            <DialogDescription className="text-soft-white/70">Choose MetaMask or create an embedded smart wallet with Google.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <Button onClick={connectWallet} className="bg-gold text-navy-900 hover:bg-gold-600"><Wallet className="mr-2 h-4 w-4" />Connect MetaMask</Button>
+            <Button onClick={connectSmartWallet} variant="outline" className="border-gold/30 text-soft-white hover:bg-gold/10"><span className="mr-2 text-base font-bold">G</span>Continue with Google smart wallet</Button>
+            {!isWeb3AuthConfigured() && <p className="text-xs text-soft-white/50">Google smart wallet requires Web3Auth configuration. MetaMask is ready now.</p>}
+          </div>
+        </DialogContent>
+      </Dialog>
     )
   }
 

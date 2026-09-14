@@ -552,7 +552,10 @@ export class ContractService {
     }
   }
 
-  async connectSigner(address?: string) {
+  async connectSigner(address?: string, injectedProvider?: any) {
+    if (injectedProvider) {
+      this.provider = new ethers.BrowserProvider(injectedProvider)
+    }
     if (!this.provider) {
       await this.initialize()
     }
