@@ -6,6 +6,7 @@ import { GoldPriceService, type GoldPriceData } from "@/services/gold-price"
 interface UseGoldPriceOptions {
   autoRefresh?: boolean
   refreshInterval?: number
+  useApiEndpoint?: boolean
   onError?: (error: Error) => void
   onSuccess?: (data: GoldPriceData) => void
 }
@@ -13,7 +14,8 @@ interface UseGoldPriceOptions {
 export function useGoldPrice(options: UseGoldPriceOptions = {}) {
   const {
     autoRefresh = true,
-    refreshInterval = 30000, // 30 seconds
+    refreshInterval = 900000, // 15 minutes
+    useApiEndpoint = false,
     onError,
     onSuccess,
   } = options
@@ -26,7 +28,26 @@ export function useGoldPrice(options: UseGoldPriceOptions = {}) {
   const fetchPrice = useCallback(async () => {
     try {
       setError(null)
-      const priceData = await GoldPriceService.fetchGoldPrice()
+      let priceData: GoldPriceData
+
+      // Option 1: Use API endpoint (recommended for server-side caching)
+      if (useApiEndpoint) {
+        const response = await fetch("/api/gold-price", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-cache",
+        })
+
+        if (!response.ok) {
+          throw new Error(`API error: ${response.statusText}`)
+        }
+
+        const apiData = await response.json()
+        priceData = apiData.data
+      } else {
+        // Option 2: Direct service call
+        priceData = await GoldPriceService.fetchGoldPrice()
+      }
 
       // Validate the price data
       if (!GoldPriceService.validatePriceData(priceData)) {
@@ -56,7 +77,7 @@ export function useGoldPrice(options: UseGoldPriceOptions = {}) {
     } finally {
       setIsLoading(false)
     }
-  }, [onError, onSuccess, data])
+  }, [onError, onSuccess, data, useApiEndpoint])
 
   const refresh = useCallback(async () => {
     setIsLoading(true)

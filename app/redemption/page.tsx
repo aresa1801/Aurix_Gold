@@ -1,108 +1,340 @@
 "use client"
 
-import { useMemo, useState, type ReactNode } from "react"
-import { AlertCircle, ArrowRight, CalendarDays, Check, Clock3, Coins, FileText, MapPin, Package, QrCode, ShieldCheck, Truck, WalletCards } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { QrCode, MapPin, AlertTriangle, CheckCircle, Send } from "lucide-react"
+import { useLanguage } from "@/contexts/language-context"
 
-const spotPrice = 1_245_000
-const outlets = [
-  { id: "central-jakarta", name: "Pegadaian Senen", address: "Jl. Kramat Raya No. 162, Jakarta Pusat" },
-  { id: "thamrin", name: "Pegadaian Thamrin", address: "Jl. M.H. Thamrin No. 24, Jakarta Pusat" },
-  { id: "sudirman", name: "Pegadaian Sudirman", address: "Jl. Jenderal Sudirman Kav. 45, Jakarta Selatan" },
-  { id: "surabaya", name: "Pegadaian Basuki Rahmat", address: "Jl. Basuki Rahmat No. 75, Surabaya" },
-]
-const formats = [
-  { id: "10g", label: "Batangan 10g", min: 10 },
-  { id: "50g", label: "Batangan 50g", min: 50 },
-  { id: "100g", label: "Batangan 100g", min: 100 },
-  { id: "dinar", label: "Gold Dinar", min: 1 },
-]
-const history = [
-  { id: "RDM-240821", date: "21 Agu 2026", type: "Fisik · 10g", amount: "10 G-TOKEN", status: "Completed" },
-  { id: "RDM-240715", date: "15 Jul 2026", type: "Cash", amount: "5 G-TOKEN", status: "Processing" },
-  { id: "RDM-240602", date: "02 Jun 2026", type: "Fisik · Dinar", amount: "1 G-TOKEN", status: "Shipped" },
+const pegadaianOutlets = [
+  { id: "jkt001", name: "outlet.jakarta.pusat", address: "outlet.jakarta.pusat.address" },
+  { id: "jkt002", name: "outlet.thamrin", address: "outlet.thamrin.address" },
+  { id: "jkt003", name: "outlet.sudirman", address: "outlet.sudirman.address" },
+  { id: "sby001", name: "outlet.surabaya", address: "outlet.surabaya.address" },
+  { id: "bdg001", name: "outlet.bandung", address: "outlet.bandung.address" },
 ]
 
-function Money({ value }: { value: number }) {
-  return <span>Rp {value.toLocaleString("id-ID")}</span>
-}
+const cardClass =
+  "rounded-2xl border border-soft-white/5 bg-navy-800/30 backdrop-blur-md hover:border-gold/20 transition-all duration-300"
+
+const steps = [
+  { id: 1, icon: MapPin, titleKey: "redemption.visitOutlet", descriptionKey: "redemption.selectPickupLocation" },
+  { id: 2, icon: QrCode, titleKey: "redemption.redemptionCode", descriptionKey: "redemption.generateRedemptionCode" },
+  { id: 3, icon: CheckCircle, titleKey: "redemption.receiveGold", descriptionKey: "redemption.getPhysicalGold" },
+]
 
 export default function RedemptionPage() {
-  const [cashAmount, setCashAmount] = useState("")
-  const [physicalAmount, setPhysicalAmount] = useState("")
-  const [outlet, setOutlet] = useState("")
-  const [pickupDate, setPickupDate] = useState("")
-  const [format, setFormat] = useState("")
-  const [institutionalAmount, setInstitutionalAmount] = useState("")
-  const [ticket, setTicket] = useState(false)
-  const todayPlusThree = useMemo(() => {
-    const date = new Date()
-    date.setDate(date.getDate() + 3)
-    return date.toISOString().split("T")[0]
-  }, [])
-  const cashEstimate = Number(cashAmount || 0) * spotPrice * 0.995
-  const physicalEstimate = Number(physicalAmount || 0) * spotPrice * 0.99 + 50000
-  const selectedFormat = formats.find((item) => item.id === format)
-  const physicalValid = Number(physicalAmount) >= (selectedFormat?.min ?? 10)
+  const [amount, setAmount] = useState("")
+  const [selectedOutlet, setSelectedOutlet] = useState("")
+  const [showQR, setShowQR] = useState(false)
+  const [redeemCode, setRedeemCode] = useState("")
+  const { t } = useLanguage()
+
+  const generateRedeemCode = () => {
+    const code = "AUR" + Math.random().toString(36).substr(2, 9).toUpperCase()
+    setRedeemCode(code)
+    setShowQR(true)
+  }
+
+  const goldValue = amount ? (Number.parseFloat(amount) * 865.5).toFixed(2) : "0"
+  const goldWeight = amount ? Number.parseFloat(amount).toFixed(6) : "0"
 
   return (
-    <main className="min-h-screen px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-        <header className="mb-8 flex flex-col gap-4 border-b border-gold/15 pb-6 md:flex-row md:items-end md:justify-between">
-          <div>
-            <Badge variant="outline" className="mb-3 border-gold/30 text-gold">AURIX REDEMPTION CENTER</Badge>
-            <h1 className="text-3xl font-semibold tracking-tight text-soft-white sm:text-4xl">Redeem your G-TOKEN</h1>
-            <p className="mt-2 max-w-2xl text-soft-white/65">Tukarkan token emas digital Anda menjadi uang tunai, emas fisik, atau pengiriman institusional.</p>
+    <div className="min-h-screen py-16 px-4">
+      <div className="container mx-auto max-w-6xl">
+        <div className="mb-10 text-center">
+          <p className="text-sm uppercase tracking-[0.3em] text-soft-white/50">Aurix Redemption</p>
+          <h1 className="mt-2 text-4xl font-bold text-soft-white md:text-5xl">{t("redemption.title")}</h1>
+          <p className="mx-auto mt-3 max-w-2xl text-soft-white/50">{t("redemption.subtitle")}</p>
+        </div>
+
+        <div className="grid gap-8 xl:grid-cols-[1.35fr_1fr]">
+          <div className="space-y-8">
+            <Card className={cardClass}>
+              <CardHeader className="pb-4">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-soft-white font-bold">
+                      <Send className="h-5 w-5 text-gold" />
+                      {t("redemption.redeemTokens")}
+                    </CardTitle>
+                    <CardDescription className="mt-2 text-soft-white/50">{t("redemption.burnTokens")}</CardDescription>
+                  </div>
+                  <Badge className="border border-gold/20 bg-gold/10 text-gold">{t("redemption.requirements")}</Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <Alert className="rounded-2xl border-gold/20 bg-gold/10">
+                  <AlertTriangle className="h-4 w-4 text-gold" />
+                  <AlertDescription className="text-gold">{t("redemption.requiresKYC")}</AlertDescription>
+                </Alert>
+
+                <div className="grid gap-6 lg:grid-cols-[1.25fr_0.95fr]">
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                      <Label className="text-soft-white/50">{t("redemption.tokensToRedeem")}</Label>
+                      <Input
+                        type="number"
+                        placeholder="0.000000"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        className="h-12 rounded-xl border-soft-white/10 bg-navy-900/50 text-lg text-soft-white placeholder:text-soft-white/30"
+                      />
+                      <div className="text-sm text-soft-white/50">{t("redemption.available")}: 125.500000 G-TOKEN</div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-soft-white/50">{t("redemption.pegadaianOutlet")}</Label>
+                      <Select value={selectedOutlet} onValueChange={setSelectedOutlet}>
+                        <SelectTrigger className="h-12 rounded-xl border-soft-white/10 bg-navy-900/50 text-soft-white">
+                          <SelectValue placeholder={t("redemption.selectPickupLocation")} />
+                        </SelectTrigger>
+                        <SelectContent className="border-soft-white/10 bg-navy-800 text-soft-white">
+                          {pegadaianOutlets.map((outlet) => (
+                            <SelectItem key={outlet.id} value={outlet.id}>
+                              <div>
+                                <div className="font-medium">{t(outlet.name)}</div>
+                                <div className="text-sm text-soft-white/50">{t(outlet.address)}</div>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-soft-white/5 bg-navy-900/50 p-5">
+                    <p className="text-sm text-soft-white/50">{t("redemption.redemptionDetails")}</p>
+                    <div className="mt-5 space-y-4">
+                      <div className="rounded-2xl border border-gold/10 bg-gold/10 p-4">
+                        <p className="text-xs uppercase tracking-[0.25em] text-soft-white/50">{t("redemption.goldWeight")}</p>
+                        <p className="mt-2 text-3xl font-bold text-gold">
+                          {goldWeight} <span className="text-base text-soft-white/50">{t("redemption.grams")}</span>
+                        </p>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-soft-white/50">{t("redemption.estimatedValue")}</span>
+                        <span className="font-semibold text-prosperity">₹{goldValue} IDRX</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-soft-white/50">{t("redemption.processingFee")}</span>
+                        <span className="text-soft-white">₹50 IDRX</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-soft-white/50">{t("redemption.minimumAmount")}</span>
+                        <span className="text-soft-white">1.0 G-TOKEN</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  className="h-12 w-full rounded-xl bg-gold font-semibold text-navy-900 hover:bg-gold-600"
+                  onClick={generateRedeemCode}
+                  disabled={!amount || !selectedOutlet || Number.parseFloat(amount) <= 0}
+                >
+                  {t("redemption.generateRedemptionCode")}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className={cardClass}>
+              <CardHeader>
+                <CardTitle className="text-soft-white font-bold">
+                  {showQR ? t("redemption.redemptionCode") : t("redemption.howItWorks")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {showQR ? (
+                  <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+                    <div className="rounded-2xl border border-soft-white/5 bg-navy-900/50 p-6 text-center">
+                      <div className="mx-auto flex h-52 w-52 items-center justify-center rounded-2xl bg-soft-white">
+                        <div className="text-center">
+                          <QrCode className="mx-auto mb-3 h-16 w-16 text-navy-900" />
+                          <div className="text-xs font-mono text-navy-900">{redeemCode}</div>
+                        </div>
+                      </div>
+                      <Badge className="mt-5 border border-prosperity/30 bg-prosperity/20 text-prosperity">
+                        <CheckCircle className="mr-1 h-3 w-3" />
+                        {t("redemption.codeGenerated")}
+                      </Badge>
+                      <div className="mt-5 rounded-2xl border border-gold/10 bg-gold/10 p-4">
+                        <p className="text-sm text-soft-white/50">{t("redemption.redemptionCode")}</p>
+                        <div className="mt-2 rounded-xl bg-navy-950/40 p-3 text-center font-mono text-lg text-gold">
+                          {redeemCode}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      {[
+                        {
+                          number: 1,
+                          title: t("redemption.visitOutlet"),
+                          description: t("redemption.bringValidID"),
+                          active: true,
+                        },
+                        {
+                          number: 2,
+                          title: t("redemption.verificationProcess"),
+                          description: t("redemption.staffWillVerify"),
+                          active: true,
+                        },
+                        {
+                          number: 3,
+                          title: t("redemption.receiveGold"),
+                          description: t("redemption.getPhysicalGold"),
+                          active: false,
+                        },
+                      ].map((step) => (
+                        <div
+                          key={step.number}
+                          className="flex gap-4 rounded-2xl border border-soft-white/5 bg-navy-900/50 p-4"
+                        >
+                          <div
+                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
+                              step.active ? "bg-gold text-navy-900" : "bg-soft-white/10 text-soft-white/50"
+                            }`}
+                          >
+                            {step.number}
+                          </div>
+                          <div>
+                            <p className="text-soft-white font-bold">{step.title}</p>
+                            <p className="mt-1 text-sm text-soft-white/50">{step.description}</p>
+                          </div>
+                        </div>
+                      ))}
+
+                      <Alert className="rounded-2xl border-prosperity/20 bg-prosperity/10">
+                        <CheckCircle className="h-4 w-4 text-prosperity" />
+                        <AlertDescription className="text-prosperity">{t("redemption.codeValidFor")}</AlertDescription>
+                      </Alert>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="grid gap-4 md:grid-cols-3">
+                      {steps.map((step) => {
+                        const Icon = step.icon
+
+                        return (
+                          <div key={step.id} className="rounded-2xl border border-soft-white/5 bg-navy-900/50 p-5">
+                            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gold/10">
+                              <Icon className="h-5 w-5 text-gold" />
+                            </div>
+                            <div className="mt-4 flex items-center gap-2">
+                              <span className="text-xs font-semibold uppercase tracking-[0.25em] text-soft-white/50">
+                                Step {step.id}
+                              </span>
+                            </div>
+                            <h4 className="mt-2 text-soft-white font-bold">{t(step.titleKey)}</h4>
+                            <p className="mt-2 text-sm text-soft-white/50">{t(step.descriptionKey)}</p>
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    <div className="rounded-2xl border border-soft-white/5 bg-navy-900/50 p-5">
+                      <h4 className="text-soft-white font-bold">{t("redemption.requirements")}</h4>
+                      <ul className="mt-4 space-y-2 text-sm text-soft-white/50">
+                        <li>• Completed KYC verification</li>
+                        <li>• Valid government-issued ID</li>
+                        <li>• Minimum redemption: 1.0 G-TOKEN</li>
+                        <li>• Processing fee: ₹50 IDRX</li>
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
-          <div className="flex items-center gap-2 rounded-xl border border-prosperity/20 bg-prosperity/10 px-4 py-3 text-sm text-prosperity"><ShieldCheck className="h-4 w-4" /> KYC verified · 125.50 G-TOKEN tersedia</div>
-        </header>
 
-        <Tabs defaultValue="cash" className="space-y-6">
-          <TabsList className="grid h-auto w-full max-w-3xl grid-cols-4 gap-1 bg-navy-900/60 p-1">
-            <TabsTrigger value="cash" className="gap-2 py-3"><WalletCards className="hidden h-4 w-4 sm:block" />Cash Redemption</TabsTrigger>
-            <TabsTrigger value="physical" className="gap-2 py-3"><Package className="hidden h-4 w-4 sm:block" />Physical Redemption</TabsTrigger>
-            <TabsTrigger value="institutional" className="gap-2 py-3"><Truck className="hidden h-4 w-4 sm:block" />Institutional</TabsTrigger>
-            <TabsTrigger value="history" className="gap-2 py-3"><FileText className="hidden h-4 w-4 sm:block" />History</TabsTrigger>
-          </TabsList>
+          <Card className={cardClass}>
+            <CardHeader>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <CardTitle className="flex items-center gap-2 text-soft-white font-bold">
+                    <CheckCircle className="h-5 w-5 text-prosperity" />
+                    {t("redemption.redemptionDetails")}
+                  </CardTitle>
+                  <CardDescription className="mt-2 text-soft-white/50">{t("redemption.importantInformation")}</CardDescription>
+                </div>
+                <Badge className="border border-prosperity/20 bg-prosperity/10 text-prosperity">
+                  {showQR ? t("redemption.codeGenerated") : t("redemption.processingTime")}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="rounded-2xl border border-soft-white/5 bg-navy-900/50 p-5">
+                <h4 className="text-soft-white font-bold">{t("redemption.exchangeProcess")}</h4>
+                <ul className="mt-4 space-y-3 text-sm text-soft-white/50">
+                  <li className="flex items-start gap-3">
+                    <span className="mt-1 h-2 w-2 rounded-full bg-gold" />
+                    <span>{t("redemption.tokensAreBurned")}</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="mt-1 h-2 w-2 rounded-full bg-gold" />
+                    <span>{t("redemption.goldReleased")}</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="mt-1 h-2 w-2 rounded-full bg-gold" />
+                    <span>{t("redemption.availableForPickup")}</span>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="mt-1 h-2 w-2 rounded-full bg-gold" />
+                    <span>{t("redemption.formVerified")}</span>
+                  </li>
+                </ul>
+              </div>
 
-          <TabsContent value="cash" className="grid gap-6 lg:grid-cols-[1.25fr_.75fr]">
-            <Card className="border-gold/20 bg-navy-800/50"><CardHeader><CardTitle className="text-gold">Cash Redemption</CardTitle><CardDescription className="text-soft-white/60">Terima estimasi nilai rupiah langsung ke rekening bank yang telah diverifikasi.</CardDescription></CardHeader><CardContent className="space-y-6">
-              <div className="grid gap-5 sm:grid-cols-2"><div className="space-y-2"><Label className="text-soft-white">Jumlah G-TOKEN</Label><Input type="number" min="1" placeholder="Minimal 1 gram" value={cashAmount} onChange={(e) => setCashAmount(e.target.value)} className="border-gold/20 bg-navy-900/70 text-soft-white" /><p className="text-xs text-soft-white/45">Saldo tersedia: 125.50 G-TOKEN</p></div><div className="space-y-2"><Label className="text-soft-white">Rekening penerima</Label><Select><SelectTrigger className="border-gold/20 bg-navy-900/70 text-soft-white"><SelectValue placeholder="Pilih rekening bank" /></SelectTrigger><SelectContent><SelectItem value="bca">BCA ···· 2841 · A. Pratama</SelectItem><SelectItem value="mandiri">Mandiri ···· 7702 · A. Pratama</SelectItem><SelectItem value="new">+ Tambah rekening baru</SelectItem></SelectContent></Select></div></div>
-              <div className="rounded-2xl border border-gold/15 bg-gold/5 p-5"><div className="mb-4 flex items-center justify-between"><span className="text-sm text-soft-white/60">Estimasi diterima</span><Coins className="h-5 w-5 text-gold" /></div><p className="text-3xl font-semibold text-gold"><Money value={cashEstimate} /></p><div className="mt-4 grid grid-cols-3 gap-3 text-xs"><div><p className="text-soft-white/45">Harga spot</p><p className="mt-1 text-soft-white"><Money value={spotPrice} /></p></div><div><p className="text-soft-white/45">Spread</p><p className="mt-1 text-soft-white">0.50%</p></div><div><p className="text-soft-white/45">Waktu proses</p><p className="mt-1 text-soft-white">1–3 hari</p></div></div></div>
-              <Button disabled={!cashAmount || Number(cashAmount) < 1} className="h-12 w-full bg-gold font-semibold text-navy-900 hover:bg-gold-600">Redeem to Cash <ArrowRight className="ml-2 h-4 w-4" /></Button>
-            </CardContent></Card>
-            <InfoCard title="Cash redemption" icon={<WalletCards className="h-5 w-5 text-gold" />} items={["Harga final mengikuti harga spot saat transaksi dikonfirmasi.", "Spread 0.5% sudah termasuk dalam estimasi.", "Dana dikirim ke rekening yang lolos verifikasi KYC.", "Tidak ada biaya tersembunyi; semua biaya ditampilkan sebelum konfirmasi."]} />
-          </TabsContent>
+              <div className="rounded-2xl border border-prosperity/20 bg-prosperity/10 p-5">
+                <h4 className="text-prosperity font-bold">{t("redemption.quickFacts")}</h4>
+                <div className="mt-4 space-y-3 text-sm">
+                  <div className="flex justify-between gap-4">
+                    <span className="text-soft-white/50">{t("redemption.minimumAmount")}:</span>
+                    <span className="text-prosperity">1.0 G-TOKEN</span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-soft-white/50">{t("redemption.maximumAmount")}:</span>
+                    <span className="text-prosperity">{t("redemption.unlimited")}</span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-soft-white/50">{t("redemption.processingTime")}:</span>
+                    <span className="text-prosperity">{t("redemption.oneToTwo")}</span>
+                  </div>
+                </div>
+              </div>
 
-          <TabsContent value="physical" className="grid gap-6 lg:grid-cols-[1.1fr_.9fr]">
-            <Card className="border-gold/20 bg-navy-800/50"><CardHeader><CardTitle className="text-gold">Physical Redemption</CardTitle><CardDescription className="text-soft-white/60">Ambil emas fisik Anda di outlet Pegadaian pilihan. Minimal 10 gram.</CardDescription></CardHeader><CardContent className="space-y-6">
-              <Alert className="border-gold/20 bg-gold/10"><AlertCircle className="h-4 w-4 text-gold" /><AlertDescription className="text-gold">Pickup tersedia mulai H+3 setelah tiket redemption dibuat.</AlertDescription></Alert>
-              <div className="grid gap-5 sm:grid-cols-2"><div className="space-y-2"><Label className="text-soft-white">Jumlah G-TOKEN</Label><Input type="number" min="10" placeholder="Minimal 10 gram" value={physicalAmount} onChange={(e) => setPhysicalAmount(e.target.value)} className="border-gold/20 bg-navy-900/70 text-soft-white" /></div><div className="space-y-2"><Label className="text-soft-white">Format emas</Label><Select value={format} onValueChange={setFormat}><SelectTrigger className="border-gold/20 bg-navy-900/70 text-soft-white"><SelectValue placeholder="Pilih format emas" /></SelectTrigger><SelectContent>{formats.map((item) => <SelectItem key={item.id} value={item.id}>{item.label} · min. {item.min}g</SelectItem>)}</SelectContent></Select></div></div>
-              <div className="space-y-2"><Label className="text-soft-white">Pilih outlet Pegadaian</Label><Select value={outlet} onValueChange={setOutlet}><SelectTrigger className="border-gold/20 bg-navy-900/70 text-soft-white"><SelectValue placeholder="Pilih lokasi pickup" /></SelectTrigger><SelectContent>{outlets.map((item) => <SelectItem key={item.id} value={item.id}>{item.name} · {item.address}</SelectItem>)}</SelectContent></Select></div>
-              <div className="grid gap-5 sm:grid-cols-2"><div className="space-y-2"><Label className="text-soft-white">Tanggal pickup</Label><div className="relative"><CalendarDays className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-gold" /><Input type="date" min={todayPlusThree} value={pickupDate} onChange={(e) => setPickupDate(e.target.value)} className="border-gold/20 bg-navy-900/70 pl-10 text-soft-white" /></div></div><div className="rounded-xl border border-gold/15 bg-navy-900/50 p-3 text-sm"><p className="text-soft-white/45">Estimasi biaya</p><p className="mt-1 font-medium text-soft-white">1% fee + <Money value={50000} /> biaya cetak</p><p className="mt-1 text-xs text-soft-white/45">Total estimasi: <Money value={physicalEstimate} /></p></div></div>
-              <Button disabled={!physicalValid || !outlet || !pickupDate || !format} onClick={() => setTicket(true)} className="h-12 w-full bg-gold font-semibold text-navy-900 hover:bg-gold-600">Generate Redemption Ticket <QrCode className="ml-2 h-4 w-4" /></Button>
-              {ticket && <div className="flex items-center gap-3 rounded-xl border border-prosperity/20 bg-prosperity/10 p-4 text-sm text-prosperity"><Check className="h-5 w-5" /> Tiket berhasil dibuat. Tunjukkan QR code saat pickup di outlet.</div>}
-            </CardContent></Card>
-            <div className="space-y-6"><Card className="overflow-hidden border-gold/20 bg-navy-800/50"><div className="relative h-56 bg-[radial-gradient(circle_at_30%_30%,rgba(219,181,77,.18),transparent_35%),linear-gradient(135deg,#171324,#0e1022)]"><div className="absolute inset-5 rounded-xl border border-gold/20 bg-gold/5"><div className="absolute left-1/4 top-1/3 h-3 w-3 rounded-full bg-gold shadow-[0_0_18px_rgba(219,181,77,.8)]" /><div className="absolute right-1/4 top-1/2 h-3 w-3 rounded-full bg-gold shadow-[0_0_18px_rgba(219,181,77,.8)]" /><div className="absolute bottom-6 left-1/2 -translate-x-1/2 rounded-full border border-gold/30 bg-navy-900/80 px-3 py-1 text-xs text-gold"><MapPin className="mr-1 inline h-3 w-3" /> Jakarta & Surabaya</div></div></div><CardContent className="p-4"><p className="text-sm font-medium text-soft-white">Jaringan outlet pickup</p><p className="mt-1 text-xs text-soft-white/50">Pilih outlet terdekat dari daftar lokasi yang tersedia.</p></CardContent></Card><InfoCard title="Before you visit" icon={<Clock3 className="h-5 w-5 text-gold" />} items={["Bawa identitas pemerintah yang valid.", "Pastikan nama pada tiket sama dengan nama KYC.", "Tiket redemption berlaku selama 30 hari.", "Simpan QR code untuk proses verifikasi di outlet."]} /></div>
-          </TabsContent>
-
-          <TabsContent value="institutional" className="grid gap-6 lg:grid-cols-[1.1fr_.9fr]"><Card className="border-gold/20 bg-navy-800/50"><CardHeader><CardTitle className="text-gold">Institutional Redemption</CardTitle><CardDescription className="text-soft-white/60">Layanan khusus untuk penukaran minimal 1 kg dengan pengiriman terproteksi.</CardDescription></CardHeader><CardContent className="space-y-5"><div className="grid gap-5 sm:grid-cols-2"><div className="space-y-2"><Label className="text-soft-white">Jumlah G-TOKEN (gram)</Label><Input type="number" min="1000" placeholder="Minimal 1,000 gram" value={institutionalAmount} onChange={(e) => setInstitutionalAmount(e.target.value)} className="border-gold/20 bg-navy-900/70 text-soft-white" /></div><div className="space-y-2"><Label className="text-soft-white">Metode pengiriman</Label><Select><SelectTrigger className="border-gold/20 bg-navy-900/70 text-soft-white"><SelectValue placeholder="Pilih kurir" /></SelectTrigger><SelectContent><SelectItem value="g4s">G4S Secure Logistics</SelectItem><SelectItem value="loomis">Loomis International</SelectItem></SelectContent></Select></div></div><div className="space-y-2"><Label className="text-soft-white">Alamat pengiriman</Label><Input placeholder="Alamat lengkap perusahaan" className="border-gold/20 bg-navy-900/70 text-soft-white" /></div><div className="space-y-2"><Label className="text-soft-white">Kontak PIC</Label><Input placeholder="Nama dan nomor telepon PIC" className="border-gold/20 bg-navy-900/70 text-soft-white" /></div><Button disabled={Number(institutionalAmount) < 1000} className="h-12 w-full bg-gold font-semibold text-navy-900 hover:bg-gold-600">Ajukan Institutional Redemption <ArrowRight className="ml-2 h-4 w-4" /></Button></CardContent></Card><InfoCard title="Institutional terms" icon={<Truck className="h-5 w-5 text-gold" />} items={["Minimum redemption: 1 kilogram.", "Biaya layanan transparan: 0.3%.", "Estimasi pengiriman: 7–14 hari kerja.", "Pengiriman menggunakan layanan secure logistics."]} /></TabsContent>
-
-          <TabsContent value="history"><Card className="border-gold/20 bg-navy-800/50"><CardHeader><CardTitle className="text-gold">Redemption History</CardTitle><CardDescription className="text-soft-white/60">Pantau status seluruh permintaan redemption Anda.</CardDescription></CardHeader><CardContent><div className="overflow-x-auto"><table className="w-full min-w-[680px] text-left text-sm"><thead className="border-b border-gold/15 text-soft-white/45"><tr><th className="pb-3 font-medium">Ticket</th><th className="pb-3 font-medium">Tanggal</th><th className="pb-3 font-medium">Tipe</th><th className="pb-3 font-medium">Jumlah</th><th className="pb-3 font-medium">Status</th></tr></thead><tbody>{history.map((item) => <tr key={item.id} className="border-b border-white/5"><td className="py-4 font-mono text-gold">{item.id}</td><td className="py-4 text-soft-white/70">{item.date}</td><td className="py-4 text-soft-white">{item.type}</td><td className="py-4 text-soft-white/70">{item.amount}</td><td className="py-4"><Badge variant="outline" className={item.status === "Completed" ? "border-prosperity/30 text-prosperity" : "border-gold/30 text-gold"}>{item.status}</Badge></td></tr>)}</tbody></table></div><div className="mt-6 flex flex-wrap gap-3 text-xs text-soft-white/45"><span>Pending</span><ArrowRight className="h-3 w-3" /><span>Processing</span><ArrowRight className="h-3 w-3" /><span>Shipped</span><ArrowRight className="h-3 w-3" /><span>Completed</span></div></CardContent></Card></TabsContent>
-        </Tabs>
+              <div className="rounded-2xl border border-soft-white/5 bg-navy-900/50 p-5">
+                <p className="text-sm text-soft-white/50">Status</p>
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-soft-white/50">{t("redemption.requiresKYC")}</span>
+                    <Badge className="border border-gold/20 bg-gold/10 text-gold">KYC</Badge>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-soft-white/50">{t("redemption.redemptionCode")}</span>
+                    <Badge
+                      className={`${
+                        showQR
+                          ? "border-prosperity/30 bg-prosperity/20 text-prosperity"
+                          : "border-soft-white/10 bg-soft-white/5 text-soft-white/50"
+                      }`}
+                    >
+                      {showQR ? t("redemption.codeGenerated") : t("redemption.generateRedemptionCode")}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-    </main>
+    </div>
   )
 }
-
-function InfoCard({ title, icon, items }: { title: string; icon: ReactNode; items: string[] }) {
-  return <Card className="h-fit border-gold/20 bg-navy-800/50"><CardHeader><CardTitle className="flex items-center gap-2 text-gold">{icon}{title}</CardTitle></CardHeader><CardContent className="space-y-4">{items.map((item) => <div key={item} className="flex items-start gap-3 text-sm text-soft-white/65"><Check className="mt-0.5 h-4 w-4 shrink-0 text-prosperity" />{item}</div>)}</CardContent></Card>
-}
-

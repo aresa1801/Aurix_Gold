@@ -1,11 +1,8 @@
 import type React from "react"
 import "./globals.css"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
 import { Navigation } from "@/components/navigation"
 import { LanguageProvider } from "@/contexts/language-context"
-
-const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "Aurix Finance - Tokenized Gold Investment Platform",
@@ -29,10 +26,10 @@ export default function RootLayout({
         <meta charSet="utf-8" />
       </head>
       <body
-        className={`${inter.className} bg-gradient-to-br from-navy-900 via-black to-navy-800 min-h-screen text-soft-white`}
+        className="font-sans bg-[#0a0e1a] min-h-screen text-soft-white antialiased"
       >
         <LanguageProvider>
-          <div className="relative min-h-screen">
+          <div className="relative min-h-screen bg-gradient-to-b from-navy-900 via-[#0a0e1a] to-navy-900">
             <Navigation />
             <main className="relative z-10">{children}</main>
           </div>
