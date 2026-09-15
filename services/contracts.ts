@@ -15,6 +15,31 @@ export const CONTRACT_ADDRESSES = {
 // Admin wallet address
 export const ADMIN_ADDRESS = "0xcd3FF5f1b21fEAF1610402De0eF5ac4d5EeC4aB3"
 
+let walletRequestInFlight: Promise<string[]> | null = null
+
+/**
+ * Returns already-authorized accounts without prompting. Only asks MetaMask
+ * for permission after an explicit user action, and coalesces simultaneous
+ * requests so multiple components cannot open competing connection prompts.
+ */
+export async function requestWalletAccounts(): Promise<string[]> {
+  const ethereum = typeof window !== "undefined" ? (window as any).ethereum : undefined
+  if (!ethereum?.request) {
+    throw new Error("MetaMask is not installed or unavailable in this browser.")
+  }
+
+  const authorizedAccounts = (await ethereum.request({ method: "eth_accounts" })) as string[]
+  if (authorizedAccounts?.length) return authorizedAccounts
+
+  if (!walletRequestInFlight) {
+    walletRequestInFlight = (ethereum.request({ method: "eth_requestAccounts" }) as Promise<string[]>).finally(() => {
+      walletRequestInFlight = null
+    })
+  }
+
+  return walletRequestInFlight
+}
+
 // ABIs
 export const FAUCET_ABI = [
   {
@@ -521,12 +546,28 @@ export class ContractService {
   async initialize() {
     if (typeof window !== "undefined" && (window as any).ethereum) {
       this.provider = new ethers.BrowserProvider((window as any).ethereum)
-      try {
-        this.signer = await this.provider.getSigner()
-      } catch (error) {
-        console.warn("Failed to get signer:", error)
-      }
+      // Do not call getSigner here. In ethers, getSigner can request wallet
+      // access, which must only happen after an explicit user action.
+      this.signer = null
     }
+  }
+
+  async connectSigner(address?: string, injectedProvider?: any) {
+    if (injectedProvider) {
+      this.provider = new ethers.BrowserProvider(injectedProvider)
+    }
+    if (!this.provider) {
+      await this.initialize()
+    }
+
+    if (!this.provider) {
+      throw new Error("Wallet provider not available")
+    }
+
+    // Use the already-authorized address so ethers does not issue another
+    // wallet connection request after the explicit user approval.
+    this.signer = await this.provider.getSigner(address)
+    return this.signer
   }
 
   // Get contract instance
@@ -539,6 +580,12 @@ export class ContractService {
   getReadOnlyContract(address: string, abi: any[]) {
     if (!this.provider) throw new Error("Provider not available")
     return new ethers.Contract(address, abi, this.provider)
+  }
+
+  // Read-only snapshot used by portfolio integrations and refresh flows.
+  async getPortfolioSnapshot(userAddress: string) {
+    await this.initialize()
+    return this.syncWalletBalances(userAddress)
   }
 
   // Enhanced balance synchronization

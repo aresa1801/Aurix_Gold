@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -22,7 +22,8 @@ import {
 import { Wallet, ChevronDown, Copy, ExternalLink, Power, RefreshCw, Network, Coins } from "lucide-react"
 import { toast } from "@/hooks/use-toast"
 import { useLanguage } from "@/contexts/language-context"
-import { contractService } from "@/services/contracts"
+import { contractService, requestWalletAccounts } from "@/services/contracts"
+import { connectGoogleSmartWallet, disconnectGoogleSmartWallet, isWeb3AuthConfigured } from "@/services/web3auth-wallet"
 
 const networks = [
   {
@@ -62,6 +63,7 @@ interface WalletState {
   goldTokenBalance: string
   network: (typeof networks)[0] | null
   isConnecting: boolean
+  providerType: "metamask" | "web3auth" | null
   canClaimFaucet: boolean
   nextClaimTime: number
 }
@@ -76,11 +78,30 @@ export function WalletConnect() {
     goldTokenBalance: "0.0",
     network: null,
     isConnecting: false,
+    providerType: null,
     canClaimFaucet: false,
     nextClaimTime: 0,
   })
   const [showNetworkDialog, setShowNetworkDialog] = useState(false)
   const [isClaimingFaucet, setIsClaimingFaucet] = useState(false)
+
+  useEffect(() => {
+    const ethereum = typeof window !== "undefined" ? (window as any).ethereum : undefined
+    if (!ethereum?.on) return
+
+    const handleAccountsChanged = (accounts: string[]) => {
+      if (!accounts?.[0]) disconnectWallet()
+      else setWallet((prev) => ({ ...prev, address: accounts[0] }))
+    }
+    const handleChainChanged = () => window.location.reload()
+
+    ethereum.on("accountsChanged", handleAccountsChanged)
+    ethereum.on("chainChanged", handleChainChanged)
+    return () => {
+      ethereum.removeListener?.("accountsChanged", handleAccountsChanged)
+      ethereum.removeListener?.("chainChanged", handleChainChanged)
+    }
+  }, [])
 
   // Load wallet data after connection
   const loadWalletData = async (address: string) => {
@@ -141,76 +162,68 @@ export function WalletConnect() {
     }
   }
 
-  // Enhanced wallet connection function
   const connectWallet = async () => {
+    if (wallet.isConnecting) return
     setWallet((prev) => ({ ...prev, isConnecting: true }))
 
     try {
-      // Check if MetaMask or other wallet is available
-      if (typeof window !== "undefined" && (window as any).ethereum) {
-        try {
-          // Request account access
-          const accounts = await (window as any).ethereum.request({
-            method: "eth_requestAccounts",
-          })
-
-          if (accounts.length > 0) {
-            setWallet((prev) => ({
-              ...prev,
-              isConnected: true,
-              address: accounts[0],
-              network: networks[0], // Default to BSC
-              isConnecting: false,
-            }))
-
-            // Load contract data (with fallback to demo)
-            await loadWalletData(accounts[0])
-
-            toast({
-              title: t("wallet.connected"),
-              description: `${t("wallet.connectedDesc")} ${accounts[0].slice(0, 6)}...${accounts[0].slice(-4)}`,
-            })
-          }
-        } catch (error) {
-          console.error("MetaMask connection failed:", error)
-          throw error
-        }
-      } else {
-        // Fallback for demo purposes when MetaMask not available
-        console.log("📱 MetaMask not detected, using demo mode")
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-
-        const demoAddress = "0x742d35Cc6634C0532925a3b8D4C2C4e0C8b4C8b4"
-        setWallet({
-          isConnected: true,
-          address: demoAddress,
-          balance: "2.5847",
-          idrtBalance: "50000000",
-          goldTokenBalance: "125.500000",
-          network: networks[0],
-          isConnecting: false,
-          canClaimFaucet: true,
-          nextClaimTime: 0,
-        })
-
-        toast({
-          title: t("wallet.connected"),
-          description: `${t("wallet.connectedDesc")} Demo Mode`,
-        })
+      const ethereum = typeof window !== "undefined" ? (window as any).ethereum : undefined
+      if (!ethereum?.request) {
+        throw new Error("MetaMask is not installed. Install MetaMask and try again.")
       }
-    } catch (error) {
-      console.error("Failed to connect wallet:", error)
-      setWallet((prev) => ({ ...prev, isConnecting: false }))
+
+      const accounts = await requestWalletAccounts()
+      const address = accounts?.[0]
+      if (!address) throw new Error("No wallet account was selected.")
+
+      const chainId = await ethereum.request({ method: "eth_chainId" })
+      const network = networks.find((item) => item.chainId.toLowerCase() === String(chainId).toLowerCase()) ?? networks[0]
+
+      await contractService.connectSigner(address)
+      setWallet((prev) => ({ ...prev, isConnected: true, address, network, providerType: "metamask", isConnecting: false }))
+      await loadWalletData(address)
 
       toast({
-        title: t("wallet.connectionFailed"),
-        description: t("wallet.connectionFailedDesc"),
-        variant: "destructive",
+        title: t("wallet.connected"),
+        description: `${t("wallet.connectedDesc")} ${address.slice(0, 6)}...${address.slice(-4)}`,
       })
+    } catch (error: any) {
+      const code = error?.code
+      const message = code === 4001
+        ? "Connection request was rejected in MetaMask. Approve the request to continue."
+        : error?.message || t("wallet.connectionFailedDesc")
+      console.error("Failed to connect wallet:", error)
+      setWallet((prev) => ({ ...prev, isConnecting: false }))
+      toast({ title: t("wallet.connectionFailed"), description: message, variant: "destructive" })
+    }
+  }
+
+  const connectSmartWallet = async () => {
+    if (!isWeb3AuthConfigured()) {
+      toast({ title: "Google smart wallet belum dikonfigurasi", description: "Tambahkan NEXT_PUBLIC_WEB3AUTH_CLIENT_ID untuk mengaktifkan login Google.", variant: "destructive" })
+      return
+    }
+    if (wallet.isConnecting) return
+    setWallet((prev) => ({ ...prev, isConnecting: true }))
+    try {
+      const provider = await connectGoogleSmartWallet()
+      const accounts = (await provider.request({ method: "eth_accounts" })) as string[]
+      const address = accounts?.[0]
+      if (!address) throw new Error("No Google smart wallet account was returned.")
+      const chainId = await provider.request({ method: "eth_chainId" })
+      const network = networks.find((item) => item.chainId.toLowerCase() === String(chainId).toLowerCase()) ?? networks[0]
+      await contractService.connectSigner(address, provider as any)
+      setWallet((prev) => ({ ...prev, isConnected: true, address, network, providerType: "web3auth", isConnecting: false }))
+      await loadWalletData(address)
+      toast({ title: "Google smart wallet connected", description: `${address.slice(0, 6)}...${address.slice(-4)}` })
+    } catch (error: any) {
+      setWallet((prev) => ({ ...prev, isConnecting: false }))
+      toast({ title: "Google wallet connection failed", description: error?.message ?? "Please try again.", variant: "destructive" })
     }
   }
 
   const disconnectWallet = () => {
+    if (wallet.providerType === "web3auth") void disconnectGoogleSmartWallet()
     setWallet({
       isConnected: false,
       address: "",
@@ -360,23 +373,25 @@ export function WalletConnect() {
 
   if (!wallet.isConnected) {
     return (
-      <Button
-        onClick={connectWallet}
-        disabled={wallet.isConnecting}
-        className="bg-gold hover:bg-gold-600 text-navy-900 font-semibold"
-      >
-        {wallet.isConnecting ? (
-          <>
-            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-            {t("wallet.connecting")}
-          </>
-        ) : (
-          <>
-            <Wallet className="h-4 w-4 mr-2" />
-            {t("nav.connectWallet")}
-          </>
-        )}
-      </Button>
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button disabled={wallet.isConnecting} className="bg-gold hover:bg-gold-600 text-navy-900 font-semibold">
+            {wallet.isConnecting ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Wallet className="h-4 w-4 mr-2" />}
+            {wallet.isConnecting ? t("wallet.connecting") : t("nav.connectWallet")}
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="bg-navy-800 border-gold/20">
+          <DialogHeader>
+            <DialogTitle className="text-gold">Connect to AuriX</DialogTitle>
+            <DialogDescription className="text-soft-white/70">Choose MetaMask or create an embedded smart wallet with Google.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3">
+            <Button onClick={connectWallet} className="bg-gold text-navy-900 hover:bg-gold-600"><Wallet className="mr-2 h-4 w-4" />Connect MetaMask</Button>
+            <Button onClick={connectSmartWallet} variant="outline" className="border-gold/30 text-soft-white hover:bg-gold/10"><span className="mr-2 text-base font-bold">G</span>Continue with Google smart wallet</Button>
+            {!isWeb3AuthConfigured() && <p className="text-xs text-soft-white/50">Google smart wallet requires Web3Auth configuration. MetaMask is ready now.</p>}
+          </div>
+        </DialogContent>
+      </Dialog>
     )
   }
 
